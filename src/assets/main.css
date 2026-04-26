@@ -1,0 +1,134 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+  }
+}
+
+@layer base {
+  html {
+    scrollbar-gutter: stable;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    min-height: 100vh;
+    @apply bg-background text-foreground antialiased;
+    background-image:
+      radial-gradient(circle at top right, rgba(59, 130, 246, 0.12), transparent 28%),
+      radial-gradient(circle at top left, rgba(34, 197, 94, 0.08), transparent 24%),
+      linear-gradient(to bottom, rgba(255, 255, 255, 0.02), transparent 35%);
+  }
+
+  ::selection {
+    background: hsl(var(--primary) / 0.18);
+    color: hsl(var(--foreground));
+  }
+}
+
+@layer components {
+  .app-shell {
+    @apply min-h-screen bg-background text-foreground;
+    background-image:
+      radial-gradient(circle at top right, rgba(59, 130, 246, 0.12), transparent 28%),
+      radial-gradient(circle at top left, rgba(34, 197, 94, 0.08), transparent 24%),
+      linear-gradient(to bottom, rgba(255, 255, 255, 0.02), transparent 35%);
+  }
+
+  .app-main {
+    @apply min-h-0 flex-1 p-4 sm:p-6 lg:p-8;
+  }
+
+  .app-page {
+    @apply relative space-y-6 overflow-hidden rounded-[2rem] p-1;
+  }
+
+  .app-surface {
+    @apply overflow-hidden rounded-[1.75rem] border border-border/70 bg-card/85 shadow-[0_18px_50px_-28px_rgba(15,23,42,0.35)] backdrop-blur-xl;
+  }
+
+  .app-surface-body {
+    @apply rounded-[1.5rem] border border-border/70 bg-background/80 p-4 shadow-sm sm:p-6;
+  }
+
+  .app-section-title {
+    @apply text-lg font-semibold text-foreground;
+  }
+
+  .app-kicker {
+    @apply inline-flex items-center rounded-full border border-primary/15 bg-primary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-primary;
+  }
+
+  .app-stat-card {
+    @apply rounded-2xl border border-border/70 bg-background/80 p-4 shadow-sm;
+  }
+
+  .app-badge {
+    @apply inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold tracking-wide ring-1;
+  }
+
+  .app-input,
+  .app-select,
+  .app-textarea {
+    @apply w-full rounded-2xl border border-input bg-background/90 px-4 py-3 text-sm text-foreground shadow-sm outline-none transition placeholder:text-muted-foreground focus:border-primary/40 focus:ring-4 focus:ring-primary/10;
+  }
+
+  .app-btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-primary via-sky-600 to-cyan-500 px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition hover:-translate-y-0.5 hover:shadow-xl disabled:translate-y-0 disabled:opacity-50;
+  }
+
+  .app-btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-border/80 bg-background px-4 py-2.5 text-sm font-medium text-foreground shadow-sm transition hover:-translate-y-0.5 hover:bg-muted disabled:translate-y-0 disabled:opacity-50;
+  }
+
+  .app-btn-danger {
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-destructive/20 bg-destructive/5 px-4 py-2.5 text-sm font-medium text-destructive shadow-sm transition hover:-translate-y-0.5 hover:bg-destructive/10 disabled:translate-y-0 disabled:opacity-50;
+  }
+}
