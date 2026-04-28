@@ -138,6 +138,10 @@ export const authAPI = {
   }
 }
 
+export const statisticsAPI = {
+  getDashboardStats() {
+    return apiClient.get('/statistics/dashboard')
+  }
+}
+
 void authAPI.register
-
-
