@@ -132,3 +132,25 @@
     @apply inline-flex items-center justify-center gap-2 rounded-full border border-destructive/20 bg-destructive/5 px-4 py-2.5 text-sm font-medium text-destructive shadow-sm transition hover:-translate-y-0.5 hover:bg-destructive/10 disabled:translate-y-0 disabled:opacity-50;
   }
 }
+
+/* KaTeX tweaks: ensure inline math aligns with surrounding text and keeps spacing */
+.katex-inline {
+  display: inline-block;
+  vertical-align: baseline;
+  margin: 0 0.25rem;
+  font-size: inherit;
+  line-height: inherit;
+  position: relative;
+  font-style: normal;
+  white-space: nowrap;
+}
+.katex-block {
+  display: block;
+  margin: 0.4rem 0;
+}
+.plain-text {
+  display: inline-block;
+  font-family: inherit;
+  font-style: inherit;
+  line-height: inherit;
+}

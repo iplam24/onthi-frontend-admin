@@ -81,6 +81,7 @@ const contentFormatOptions = [
 ]
 
 const latexQuickActions = [
+  { label: 'Block', kind: 'wrap', before: '$$\\n', after: '\\n$$', placeholder: '\\\\frac{a}{b}' },
   { label: 'Inline', kind: 'wrap', before: '\\(', after: '\\)', placeholder: 'x^2' },
   { label: 'Phân số', kind: 'insert', template: '\\frac{a}{b}' },
   { label: 'Căn bậc hai', kind: 'insert', template: '\\sqrt{x}' },
@@ -88,6 +89,17 @@ const latexQuickActions = [
   { label: 'Chỉ số', kind: 'insert', template: 'a_{i}' },
   { label: 'Tích phân', kind: 'insert', template: '\\int_{a}^{b} f(x) \\, dx' }
 ]
+
+const previewVisible = ref(true)
+const helpVisible = ref(false)
+
+function togglePreview() {
+  previewVisible.value = !previewVisible.value
+}
+
+function toggleHelp() {
+  helpVisible.value = !helpVisible.value
+}
 
 const quickTopicOptions = computed(() =>
   props.topics.map(topic => ({
@@ -275,9 +287,12 @@ function submitForm() {
     return
   }
 
+  // Send raw content as-is (no automatic wrapping). User will provide delimiters when needed.
+  const contentToSend = formState.content.trim()
+
   emit('submit', {
     form: {
-      content: formState.content.trim(),
+      content: contentToSend,
       contentFormat: formState.contentFormat,
       topicId: formState.topicId,
       url: formState.url,
@@ -312,6 +327,46 @@ onBeforeUnmount(() => {
     <div class="max-h-[70vh] space-y-5 overflow-y-auto pr-1">
       <div class="space-y-2">
         <label for="question-content" class="text-sm font-medium text-foreground">Nội dung câu hỏi</label>
+        <div class="mb-2 flex items-center justify-between gap-2">
+          <div class="flex flex-wrap items-center gap-2">
+            <button
+              v-for="action in latexQuickActions.slice(0,4)"
+              :key="action.label"
+              type="button"
+              class="rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted"
+              @click="insertLatexTemplate(action)"
+              :title="action.label"
+            >
+              {{ action.label }}
+            </button>
+            <button
+              v-for="action in latexQuickActions.slice(4)"
+              :key="action.label"
+              type="button"
+              class="rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted"
+              @click="insertLatexTemplate(action)"
+              :title="action.label"
+            >
+              {{ action.label }}
+            </button>
+          </div>
+          <div class="flex items-center gap-2">
+            <button
+              type="button"
+              class="rounded-md border border-border px-3 py-1.5 text-xs text-foreground hover:bg-muted"
+              @click="togglePreview"
+            >
+              {{ previewVisible ? 'Ẩn xem trước' : 'Hiện xem trước' }}
+            </button>
+            <button
+              type="button"
+              class="rounded-md border border-border px-3 py-1.5 text-xs text-foreground hover:bg-muted"
+              @click="toggleHelp"
+            >
+              {{ helpVisible ? 'Đóng trợ giúp' : 'Trợ giúp' }}
+            </button>
+          </div>
+        </div>
         <textarea
           id="question-content"
           ref="contentInputRef"
@@ -334,6 +389,15 @@ onBeforeUnmount(() => {
           </option>
         </select>
         <p class="text-xs text-muted-foreground">Chọn LaTeX khi nội dung có công thức, ví dụ: \(x^2 + \frac{1}{2}\).</p>
+      </div>
+
+      <div class="rounded-xl border border-dashed border-border bg-muted/20 p-3 text-xs text-muted-foreground">
+        <p class="font-medium text-foreground">Ghi chú cách viết công thức</p>
+        <ul class="mt-2 space-y-1 pl-4 list-disc">
+          <li>Inline: viết <span class="font-semibold text-foreground">\( x^2 + \frac{a}{b} \)</span> để công thức nằm cùng dòng với chữ.</li>
+          <li>Block: viết <span class="font-semibold text-foreground">$$ x^2 + \frac{a}{b} $$</span> để công thức xuống dòng riêng.</li>
+          <li>Nếu công thức có chữ và toán tử lẫn nhau, hãy đặt khoảng trắng rõ ràng giữa phần chữ và phần math.</li>
+        </ul>
       </div>
 
       <div class="space-y-3 rounded-xl border border-border bg-muted/20 p-3">
@@ -362,9 +426,18 @@ onBeforeUnmount(() => {
         </div>
       </div>
 
-      <div v-if="formState.content" class="space-y-2">
+      <div v-if="formState.content && previewVisible" class="space-y-2">
         <p class="text-sm font-medium text-foreground">Xem trước nội dung</p>
         <div class="rounded-xl border border-border bg-background p-3 text-foreground" v-html="renderQuestionContent(formState.content, formState.contentFormat)" />
+      </div>
+
+      <div v-if="helpVisible" class="rounded-lg border border-border bg-background p-3 text-xs text-muted-foreground">
+        <p class="font-medium text-foreground">Trợ giúp nhanh LaTeX</p>
+        <ul class="mt-2 list-disc pl-5">
+          <li>Sử dụng <span class="font-semibold">\\( ... \\)</span> cho inline hoặc <span class="font-semibold">$$ ... $$</span> cho block.</li>
+          <li>Ví dụ: <span class="font-semibold">\\frac{a}{b}, \\sqrt{x}, x^{2}</span></li>
+          <li>Bấm nút chèn để nhanh tạo template, nó sẽ tự đổi kiểu sang LaTeX.</li>
+        </ul>
       </div>
 
       <div class="space-y-2">
