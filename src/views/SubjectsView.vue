@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { Pencil, Plus, RefreshCw, Trash2 } from 'lucide-vue-next'
 import { levelsAPI, subjectsAPI } from '@/services/api'
 import { resolveMediaUrl } from '@/utils/url'
+import { normalizeCollection, normalizeLevel, normalizeSubject } from '@/utils/normalizers'
 
 const router = useRouter()
 const subjects = ref([])
@@ -19,32 +20,6 @@ const displaySubjects = computed(() =>
     imageUrl: resolveMediaUrl(subject.imageUrl)
   }))
 )
-
-function normalizeCollection(payload) {
-  const raw = payload?.data ?? payload
-  if (Array.isArray(raw)) return raw
-  if (Array.isArray(raw?.items)) return raw.items
-  if (Array.isArray(raw?.results)) return raw.results
-  return []
-}
-
-function normalizeLevel(item) {
-  return {
-    id: item?.id ?? item?._id,
-    name: item?.name ?? ''
-  }
-}
-
-function normalizeSubject(item) {
-  return {
-    id: item?.id ?? item?._id,
-    name: item?.name ?? '',
-    imageUrl: item?.imageUrl ?? null,
-    levelId: item?.levelId ?? '',
-    levelName: item?.levelName ?? ''
-  }
-}
-
 async function loadData() {
   isLoading.value = true
   errorMessage.value = ''

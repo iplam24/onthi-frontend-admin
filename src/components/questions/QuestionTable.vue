@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import { Loader2 } from 'lucide-vue-next'
+import { renderQuestionContent } from '@/utils/questionContent'
 
 const props = defineProps({
   questions: {
@@ -20,6 +21,23 @@ const props = defineProps({
 const emit = defineEmits(['prev-page', 'next-page', 'view', 'edit', 'delete'])
 
 const hasQuestions = computed(() => props.questions.length > 0)
+
+const renderedQuestions = computed(() =>
+  props.questions.map(question => ({
+    ...question,
+    renderedContent: renderQuestionContent(question.content, question.contentFormat),
+    contentFormatLabel: getContentFormatLabel(question.contentFormat),
+    renderedTypeLabel: getQuestionTypeLabel(question.type)
+  }))
+)
+
+function getQuestionTypeLabel(type) {
+  return String(type || '').toUpperCase() === 'ESSAY' ? 'Tự luận' : 'Trắc nghiệm'
+}
+
+function getContentFormatLabel(contentFormat) {
+  return String(contentFormat || '').toUpperCase() === 'LATEX' ? 'LaTeX' : 'Văn bản'
+}
 </script>
 
 <template>
@@ -77,8 +95,15 @@ const hasQuestions = computed(() => props.questions.length > 0)
               Chưa có dữ liệu câu hỏi.
             </td>
           </tr>
-          <tr v-for="question in questions" :key="question.id" class="group border-b border-border/60 last:border-b-0 transition-colors hover:bg-gradient-to-r hover:from-primary/5 hover:to-cyan-500/5">
-            <td class="px-6 py-5 text-sm font-medium text-foreground">{{ question.content }}</td>
+          <tr v-for="question in renderedQuestions" :key="question.id" class="group border-b border-border/60 last:border-b-0 transition-colors hover:bg-gradient-to-r hover:from-primary/5 hover:to-cyan-500/5">
+            <td class="px-6 py-5 text-sm font-medium text-foreground">
+              <div class="space-y-2">
+                <div class="max-w-[34rem] break-words leading-6" v-html="question.renderedContent" />
+                <span class="inline-flex items-center rounded-full bg-muted px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                  {{ question.contentFormatLabel }}
+                </span>
+              </div>
+            </td>
             <td class="px-6 py-4 text-sm text-foreground">
               <div class="space-y-1">
                 <p class="font-semibold text-foreground">{{ question.topicLabel }}</p>
@@ -102,7 +127,7 @@ const hasQuestions = computed(() => props.questions.length > 0)
                   ? 'bg-fuchsia-500/10 text-fuchsia-700 ring-1 ring-fuchsia-500/20 dark:text-fuchsia-300'
                   : 'bg-cyan-500/10 text-cyan-700 ring-1 ring-cyan-500/20 dark:text-cyan-300'"
               >
-                {{ question.typeLabel }}
+                {{ question.renderedTypeLabel }}
               </span>
             </td>
             <td class="px-6 py-4 text-sm text-foreground">

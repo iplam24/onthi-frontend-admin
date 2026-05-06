@@ -3,6 +3,7 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { Pencil, Plus, RefreshCw, Trash2 } from 'lucide-vue-next'
 import BaseDialog from '@/components/ui/BaseDialog.vue'
 import { levelsAPI } from '@/services/api'
+import { normalizeCollection, normalizeLevel } from '@/utils/normalizers'
 
 const levels = ref([])
 const isLoading = ref(false)
@@ -14,21 +15,6 @@ const errorMessage = ref('')
 const formState = reactive({ name: '' })
 
 const totalLevels = computed(() => levels.value.length)
-
-function normalizeCollection(payload) {
-  const raw = payload?.data ?? payload
-  if (Array.isArray(raw)) return raw
-  if (Array.isArray(raw?.items)) return raw.items
-  if (Array.isArray(raw?.results)) return raw.results
-  return []
-}
-
-function normalizeLevel(item) {
-  return {
-    id: item?.id ?? item?._id,
-    name: item?.name ?? ''
-  }
-}
 
 async function loadLevels() {
   isLoading.value = true

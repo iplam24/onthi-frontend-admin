@@ -1,8 +1,9 @@
 <script setup>
-import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, reactive, ref, watch } from 'vue'
 import BaseDialog from '@/components/ui/BaseDialog.vue'
 import { API_CONFIG } from '@/constants'
 import { RefreshCw as RefreshIcon, Trash2 as TrashIcon } from 'lucide-vue-next'
+import { renderQuestionContent } from '@/utils/questionContent'
 
 const props = defineProps({
   open: {
@@ -42,11 +43,13 @@ const props = defineProps({
 const emit = defineEmits(['close', 'submit'])
 
 const imageInputRef = ref(null)
+const contentInputRef = ref(null)
 const pendingImageFile = ref(null)
 const imagePreviewUrl = ref('')
 const localError = ref('')
 const formState = reactive({
   content: '',
+  contentFormat: 'PLAIN_TEXT',
   topicId: '',
   url: '',
   difficulty: 'EASY',
@@ -70,6 +73,20 @@ const difficultyOptions = [
   { value: 'EASY', label: 'Dễ' },
   { value: 'MEDIUM', label: 'Trung bình' },
   { value: 'HARD', label: 'Khó' }
+]
+
+const contentFormatOptions = [
+  { value: 'PLAIN_TEXT', label: 'Văn bản thường' },
+  { value: 'LATEX', label: 'LaTeX' }
+]
+
+const latexQuickActions = [
+  { label: 'Inline', kind: 'wrap', before: '\\(', after: '\\)', placeholder: 'x^2' },
+  { label: 'Phân số', kind: 'insert', template: '\\frac{a}{b}' },
+  { label: 'Căn bậc hai', kind: 'insert', template: '\\sqrt{x}' },
+  { label: 'Số mũ', kind: 'insert', template: 'x^{n}' },
+  { label: 'Chỉ số', kind: 'insert', template: 'a_{i}' },
+  { label: 'Tích phân', kind: 'insert', template: '\\int_{a}^{b} f(x) \\, dx' }
 ]
 
 const quickTopicOptions = computed(() =>
@@ -111,9 +128,55 @@ function resolveMediaUrl(url) {
   return normalizedPath
 }
 
+function focusContentInput() {
+  nextTick(() => {
+    contentInputRef.value?.focus()
+  })
+}
+
+function insertLatexTemplate(action, forceLatex = true) {
+  if (forceLatex) {
+    formState.contentFormat = 'LATEX'
+  }
+
+  const textarea = contentInputRef.value
+  if (!textarea) {
+    if (action.kind === 'wrap') {
+      formState.content = `${formState.content}${action.before}${action.placeholder || ''}${action.after}`
+    } else {
+      formState.content = `${formState.content}${action.template}`
+    }
+    focusContentInput()
+    return
+  }
+
+  const start = textarea.selectionStart ?? formState.content.length
+  const end = textarea.selectionEnd ?? start
+  const before = formState.content.slice(0, start)
+  const selectedText = formState.content.slice(start, end)
+  const after = formState.content.slice(end)
+
+  let insertion = ''
+  if (action.kind === 'wrap') {
+    const innerText = selectedText || action.placeholder || ''
+    insertion = `${action.before}${innerText}${action.after}`
+  } else {
+    insertion = action.template
+  }
+
+  formState.content = `${before}${insertion}${after}`
+
+  nextTick(() => {
+    textarea.focus()
+    const cursor = before.length + insertion.length
+    textarea.setSelectionRange(cursor, cursor)
+  })
+}
+
 function initForm() {
   const q = props.question || {}
   formState.content = q.content || ''
+  formState.contentFormat = String(q.contentFormat || 'PLAIN_TEXT').toUpperCase() === 'LATEX' ? 'LATEX' : 'PLAIN_TEXT'
   formState.topicId = q.topicId || ''
   formState.url = q.url || ''
   formState.difficulty = (q.difficulty || 'EASY').toUpperCase()
@@ -136,6 +199,7 @@ function initForm() {
 
 function resetDraft() {
   formState.content = ''
+  formState.contentFormat = 'PLAIN_TEXT'
   formState.topicId = ''
   formState.url = ''
   formState.difficulty = 'EASY'
@@ -214,6 +278,7 @@ function submitForm() {
   emit('submit', {
     form: {
       content: formState.content.trim(),
+      contentFormat: formState.contentFormat,
       topicId: formState.topicId,
       url: formState.url,
       difficulty: formState.difficulty,
@@ -249,11 +314,57 @@ onBeforeUnmount(() => {
         <label for="question-content" class="text-sm font-medium text-foreground">Nội dung câu hỏi</label>
         <textarea
           id="question-content"
+          ref="contentInputRef"
           v-model="formState.content"
-          rows="4"
+          rows="6"
           placeholder="Nhập nội dung câu hỏi"
           class="w-full rounded-md border border-input bg-background px-3 py-2 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
         />
+      </div>
+
+      <div class="space-y-2">
+        <label for="question-content-format" class="text-sm font-medium text-foreground">Kiểu nội dung</label>
+        <select
+          id="question-content-format"
+          v-model="formState.contentFormat"
+          class="w-full rounded-md border border-input bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+        >
+          <option v-for="option in contentFormatOptions" :key="option.value" :value="option.value">
+            {{ option.label }}
+          </option>
+        </select>
+        <p class="text-xs text-muted-foreground">Chọn LaTeX khi nội dung có công thức, ví dụ: \(x^2 + \frac{1}{2}\).</p>
+      </div>
+
+      <div class="space-y-3 rounded-xl border border-border bg-muted/20 p-3">
+        <div class="flex flex-wrap items-center gap-2">
+          <p class="mr-2 text-sm font-medium text-foreground">Chèn nhanh</p>
+          <button
+            v-for="action in latexQuickActions"
+            :key="action.label"
+            type="button"
+            class="rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted"
+            @click="insertLatexTemplate(action)"
+          >
+            {{ action.label }}
+          </button>
+        </div>
+
+        <div class="grid gap-2 md:grid-cols-2">
+          <div class="rounded-lg border border-border bg-background p-3 text-xs text-muted-foreground">
+            <p class="font-medium text-foreground">Cách nhập nhanh</p>
+            <p class="mt-1">Gõ công thức trong <span class="font-semibold text-foreground">\( ... \)</span> hoặc bấm nút chèn mẫu ở trên.</p>
+          </div>
+          <div class="rounded-lg border border-border bg-background p-3 text-xs text-muted-foreground">
+            <p class="font-medium text-foreground">Ví dụ</p>
+            <p class="mt-1">Tính <span class="font-semibold text-foreground">\( x^2 + \frac{1}{2} \)</span> khi <span class="font-semibold text-foreground">x = 3</span>.</p>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="formState.content" class="space-y-2">
+        <p class="text-sm font-medium text-foreground">Xem trước nội dung</p>
+        <div class="rounded-xl border border-border bg-background p-3 text-foreground" v-html="renderQuestionContent(formState.content, formState.contentFormat)" />
       </div>
 
       <div class="space-y-2">

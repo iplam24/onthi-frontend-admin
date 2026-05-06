@@ -6,6 +6,7 @@ import QuestionTable from '@/components/questions/QuestionTable.vue'
 import QuestionFormDialog from '@/components/questions/QuestionFormDialog.vue'
 import QuestionDetailDialog from '@/components/questions/QuestionDetailDialog.vue'
 import { API_CONFIG } from '@/constants'
+import { normalizeCollection, normalizeLevel, normalizeSubject, normalizeTopic, normalizeQuestion } from '@/utils/normalizers'
 
 const questions = ref([])
 const levels = ref([])
@@ -35,56 +36,6 @@ const pagination = reactive({
   hasNext: false,
   hasPrevious: false
 })
-
-function normalizeCollection(payload) {
-  const raw = payload?.data ?? payload
-  if (Array.isArray(raw)) return raw
-  if (Array.isArray(raw?.items)) return raw.items
-  if (Array.isArray(raw?.content)) return raw.content
-  if (Array.isArray(raw?.results)) return raw.results
-  return []
-}
-
-function normalizeLevel(item) {
-  return { id: item?.id ?? item?._id, name: item?.name ?? '' }
-}
-
-function normalizeSubject(item) {
-  return {
-    id: item?.id ?? item?._id,
-    name: item?.name ?? '',
-    levelId: item?.levelId ?? '',
-    levelName: item?.levelName ?? ''
-  }
-}
-
-function normalizeTopic(item) {
-  return {
-    id: item?.id ?? item?._id,
-    name: item?.name ?? '',
-    subjectId: item?.subjectId ?? '',
-    subjectName: item?.subjectName ?? '',
-    levelId: item?.levelId ?? '',
-    levelName: item?.levelName ?? ''
-  }
-}
-
-function normalizeQuestion(item) {
-  return {
-    id: item?.id ?? item?._id,
-    content: item?.content ?? '',
-    topicId: item?.topicId ?? '',
-    topicName: item?.topicName ?? '',
-    type: item?.type ?? item?.questionType ?? '',
-    difficulty: item?.difficulty ?? '',
-    sampleAnswer: item?.sampleAnswer ?? '',
-    explanation: item?.explanation ?? '',
-    url: item?.url ?? '',
-    createdByUsername: item?.createdByUsername ?? '',
-    createdAt: item?.createdAt ?? '',
-    options: Array.isArray(item?.options) ? item.options : []
-  }
-}
 
 function resolveMediaUrl(url) {
   if (!url) return ''
@@ -290,6 +241,7 @@ async function handleSubmitQuestion(payload) {
     const normalizedType = payload.form.questionType === 'essay' ? 'ESSAY' : 'MCQ'
     const requestBody = {
       content: payload.form.content.trim(),
+      contentFormat: payload.form.contentFormat,
       topicId: Number(payload.form.topicId) || payload.form.topicId,
       type: normalizedType,
       difficulty: payload.form.difficulty,

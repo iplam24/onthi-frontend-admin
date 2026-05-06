@@ -3,6 +3,7 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { Pencil, Plus, RefreshCw, Trash2 } from 'lucide-vue-next'
 import BaseDialog from '@/components/ui/BaseDialog.vue'
 import { subjectsAPI, topicsAPI } from '@/services/api'
+import { normalizeCollection, normalizeSubject, normalizeTopic } from '@/utils/normalizers'
 
 const subjects = ref([])
 const topics = ref([])
@@ -15,34 +16,6 @@ const errorMessage = ref('')
 const formState = reactive({ name: '', subjectId: '' })
 
 const totalTopics = computed(() => topics.value.length)
-
-function normalizeCollection(payload) {
-  const raw = payload?.data ?? payload
-  if (Array.isArray(raw)) return raw
-  if (Array.isArray(raw?.items)) return raw.items
-  if (Array.isArray(raw?.results)) return raw.results
-  return []
-}
-
-function normalizeSubject(item) {
-  return {
-    id: item?.id ?? item?._id,
-    name: item?.name ?? '',
-    levelId: item?.levelId ?? '',
-    levelName: item?.levelName ?? ''
-  }
-}
-
-function normalizeTopic(item) {
-  return {
-    id: item?.id ?? item?._id,
-    name: item?.name ?? '',
-    subjectId: item?.subjectId ?? '',
-    subjectName: item?.subjectName ?? '',
-    levelId: item?.levelId ?? '',
-    levelName: item?.levelName ?? ''
-  }
-}
 
 async function loadData() {
   isLoading.value = true

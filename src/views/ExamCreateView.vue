@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { ArrowLeft } from 'lucide-vue-next'
 import { examsAPI, questionsAPI, subjectsAPI, topicsAPI } from '@/services/api'
 import ExamFormWorkspace from '@/components/exams/ExamFormWorkspace.vue'
+import { normalizeCollection, normalizeSubject, normalizeTopic, normalizeQuestion } from '@/utils/normalizers'
 
 const router = useRouter()
 
@@ -35,54 +36,10 @@ const examTypeOptions = [
   { value: 'MIXED', label: 'Hỗn hợp' }
 ]
 
-function normalizeCollection(payload) {
-  const raw = payload?.data ?? payload
-  if (Array.isArray(raw)) return raw
-  if (Array.isArray(raw?.items)) return raw.items
-  if (Array.isArray(raw?.content)) return raw.content
-  if (Array.isArray(raw?.results)) return raw.results
-  return []
-}
-
-function normalizeSubject(item) {
-  return {
-    id: item?.id ?? item?._id,
-    name: item?.name ?? '',
-    levelId: item?.levelId ?? '',
-    levelName: item?.levelName ?? ''
-  }
-}
-
 function getSubjectDisplayLabel(subject) {
   if (!subject) return '—'
   const levelLabel = subject.levelName || ''
   return levelLabel ? `${subject.name} - ${levelLabel}` : subject.name || '—'
-}
-
-function normalizeTopic(item) {
-  return {
-    id: item?.id ?? item?._id,
-    name: item?.name ?? '',
-    subjectId: item?.subjectId ?? '',
-    subjectName: item?.subjectName ?? '',
-    levelId: item?.levelId ?? '',
-    levelName: item?.levelName ?? ''
-  }
-}
-
-function normalizeQuestion(item) {
-  return {
-    id: item?.id ?? item?._id,
-    questionContent: item?.questionContent ?? item?.content ?? '',
-    content: item?.content ?? '',
-    topicId: item?.topicId ?? '',
-    topicName: item?.topicName ?? '',
-    type: item?.type ?? item?.questionType ?? '',
-    difficulty: item?.difficulty ?? '',
-    options: Array.isArray(item?.options) ? item.options : [],
-    sampleAnswer: item?.sampleAnswer ?? '',
-    explanation: item?.explanation ?? ''
-  }
 }
 
 function enrichQuestion(question) {

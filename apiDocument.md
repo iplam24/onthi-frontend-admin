@@ -703,6 +703,87 @@ This document provides a comprehensive overview of all the APIs available in the
 
 ---
 
+### 5.3 Update Question
+
+*   **Method:** `PUT`
+*   **Path:** `/api/questions/{id}`
+*   **Description:** Cập nhật câu hỏi theo kiểu full update. Backend sẽ kiểm tra `topicId`, kiểm tra `type`, cập nhật dữ liệu chính, xoá dữ liệu con cũ và tạo lại dữ liệu con mới theo `type`.
+*   **Authorization:** yêu cầu đăng nhập, chỉ `ROLE_ADMIN` được phép gọi.
+*   **Request Body:** dùng chung DTO với tạo câu hỏi.
+
+    ```json
+    {
+      "content": "Tính x^2 + 1/2 khi x = 3",
+      "contentFormat": "LATEX",
+      "url": "",
+      "type": "MCQ",
+      "difficulty": "MEDIUM",
+      "topicId": 1,
+      "options": [
+        { "content": "8.5", "isCorrect": true },
+        { "content": "9.5", "isCorrect": false }
+      ],
+      "sampleAnswer": "",
+      "explanation": "Giải thích ngắn"
+    }
+    ```
+
+*   **Quy ước `contentFormat`:**
+    *   `PLAIN_TEXT` cho nội dung thường
+    *   `LATEX` cho nội dung có công thức toán
+*   **Lưu ý:** backend chỉ lưu raw text/LaTeX, frontend chịu trách nhiệm render đẹp bằng KaTeX hoặc MathJax.
+
+*   **Rule theo `type`:**
+    *   `MCQ`
+        *   bắt buộc có `content`, `difficulty`, `topicId`, `options`
+        *   `options` phải có ít nhất 2 đáp án
+        *   phải có ít nhất 1 đáp án đúng
+        *   `sampleAnswer` không dùng cho MCQ
+        *   `explanation` vẫn được lưu nếu có
+    *   `ESSAY`
+        *   bắt buộc có `content`, `difficulty`, `topicId`, `sampleAnswer`
+        *   toàn bộ option cũ sẽ bị xoá
+        *   `explanation` vẫn được lưu nếu có
+
+*   **Hành vi khi đổi loại câu hỏi:**
+    *   `MCQ` sang `ESSAY`: option cũ bị xoá, tạo `EssayAnswer`, cần gửi `sampleAnswer`
+    *   `ESSAY` sang `MCQ`: essay cũ bị xoá, tạo lại danh sách option hợp lệ
+    *   sửa `explanation`: chuỗi rỗng hoặc chỉ có khoảng trắng sẽ xoá explanation cũ, nội dung mới sẽ được tạo hoặc cập nhật lại
+
+*   **Lỗi thường gặp:**
+
+    ```json
+    {
+      "message": "Câu hỏi MCQ phải có ít nhất 2 đáp án!"
+    }
+    ```
+
+    ```json
+    {
+      "message": "Câu hỏi MCQ phải có ít nhất 1 đáp án đúng!"
+    }
+    ```
+
+    ```json
+    {
+      "message": "Câu hỏi ESSAY phải có đáp án mẫu!"
+    }
+    ```
+
+    ```json
+    {
+      "message": "Không tìm thấy topic!"
+    }
+    ```
+
+*   **Gợi ý cho frontend:**
+    *   form edit MCQ nên có nội dung câu hỏi, `contentFormat`, URL media, độ khó, chủ đề, danh sách option động, checkbox đáp án đúng và ô giải thích
+    *   form edit ESSAY nên có nội dung câu hỏi, `contentFormat`, URL media, độ khó, chủ đề, ô đáp án mẫu và ô giải thích
+    *   khi chuyển `MCQ` <-> `ESSAY`, nên cảnh báo người dùng vì dữ liệu con cũ sẽ bị thay thế
+    *   nên có preview trước khi lưu để tránh mất option hoặc đáp án mẫu
+
+---
+
 ## 6. System APIs
 
 ### 6.1 Health Check

@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import BaseDialog from '@/components/ui/BaseDialog.vue'
 import { API_CONFIG } from '@/constants'
+import { renderQuestionContent } from '@/utils/questionContent'
 
 const props = defineProps({
   open: {
@@ -48,6 +49,26 @@ function getDifficultyLabel(difficulty) {
 
   return labels[difficulty] || difficulty || '—'
 }
+
+  const renderedDetail = computed(() => {
+    const question = detailQuestion.value || {}
+
+    return {
+      contentHtml: renderQuestionContent(question.content, question.contentFormat),
+      sampleAnswerHtml: renderQuestionContent(question.sampleAnswer, question.contentFormat),
+      explanationHtml: renderQuestionContent(question.explanation, question.contentFormat),
+      options: Array.isArray(question.options)
+        ? question.options.map(option => ({
+            ...option,
+            contentHtml: renderQuestionContent(option.content, question.contentFormat)
+          }))
+        : []
+    }
+  })
+
+function getContentFormatLabel(contentFormat) {
+  return String(contentFormat || '').toUpperCase() === 'LATEX' ? 'LaTeX' : 'Văn bản'
+}
 </script>
 
 <template>
@@ -55,7 +76,7 @@ function getDifficultyLabel(difficulty) {
     <div v-if="detailQuestion" class="max-h-[70vh] space-y-5 overflow-y-auto pr-1">
       <div class="space-y-2">
         <p class="text-sm font-medium text-muted-foreground">Nội dung</p>
-        <p class="rounded-lg border border-border bg-background p-3 text-foreground">{{ detailQuestion.content }}</p>
+        <div class="rounded-lg border border-border bg-background p-3 text-foreground" v-html="renderQuestionContent(detailQuestion.content, detailQuestion.contentFormat)" />
       </div>
 
       <div class="grid gap-4 sm:grid-cols-2">
@@ -66,6 +87,10 @@ function getDifficultyLabel(difficulty) {
         <div class="space-y-2">
           <p class="text-sm font-medium text-muted-foreground">Loại</p>
           <p class="rounded-lg border border-border bg-background p-3 text-foreground">{{ getTypeLabel(detailQuestion.type) }}</p>
+        </div>
+        <div class="space-y-2">
+          <p class="text-sm font-medium text-muted-foreground">Kiểu nội dung</p>
+          <p class="rounded-lg border border-border bg-background p-3 text-foreground">{{ getContentFormatLabel(detailQuestion.contentFormat) }}</p>
         </div>
         <div class="space-y-2">
           <p class="text-sm font-medium text-muted-foreground">Độ khó</p>
@@ -98,7 +123,7 @@ function getDifficultyLabel(difficulty) {
             :key="option.id || index"
             class="flex items-center justify-between rounded-lg border border-border bg-background p-3"
           >
-            <p class="text-foreground">{{ option.content }}</p>
+            <p class="text-foreground" v-html="renderQuestionContent(option.content, detailQuestion.contentFormat)" />
             <span class="rounded-full px-3 py-1 text-xs font-medium" :class="option.isCorrect ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'">
               {{ option.isCorrect ? 'Đúng' : 'Sai' }}
             </span>
@@ -109,11 +134,11 @@ function getDifficultyLabel(difficulty) {
       <div class="grid gap-4 sm:grid-cols-2">
         <div class="space-y-2">
           <p class="text-sm font-medium text-muted-foreground">Đáp án mẫu</p>
-          <p class="rounded-lg border border-border bg-background p-3 text-foreground">{{ detailQuestion.sampleAnswer || '—' }}</p>
+          <div class="rounded-lg border border-border bg-background p-3 text-foreground" v-html="renderQuestionContent(detailQuestion.sampleAnswer, detailQuestion.contentFormat) || '—'" />
         </div>
         <div class="space-y-2">
           <p class="text-sm font-medium text-muted-foreground">Giải thích</p>
-          <p class="rounded-lg border border-border bg-background p-3 text-foreground">{{ detailQuestion.explanation || '—' }}</p>
+          <div class="rounded-lg border border-border bg-background p-3 text-foreground" v-html="renderQuestionContent(detailQuestion.explanation, detailQuestion.contentFormat) || '—'" />
         </div>
       </div>
 

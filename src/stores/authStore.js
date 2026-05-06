@@ -6,7 +6,7 @@ import { deleteCookie, getCookie, setCookie } from '@/services/cookie'
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref(null)
-  const token = ref(getCookie(COOKIE_KEYS.AUTH_TOKEN) || localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN) || null)
+  const token = ref(getCookie(COOKIE_KEYS.AUTH_TOKEN) || null)
   const isLoading = ref(false)
   const error = ref(null)
 
@@ -46,7 +46,6 @@ export const useAuthStore = defineStore('auth', () => {
         maxAge: 60 * 60 * 24 * 7
       })
       localStorage.setItem(STORAGE_KEYS.USER_INFO, JSON.stringify(userData))
-      localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN)
 
       return true
     } catch (err) {
@@ -61,23 +60,15 @@ export const useAuthStore = defineStore('auth', () => {
     token.value = null
     user.value = null
     deleteCookie(COOKIE_KEYS.AUTH_TOKEN)
-    localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN)
     localStorage.removeItem(STORAGE_KEYS.USER_INFO)
   }
 
   function restoreSession() {
-    const savedToken = getCookie(COOKIE_KEYS.AUTH_TOKEN) || localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN)
+    const savedToken = getCookie(COOKIE_KEYS.AUTH_TOKEN)
     const savedUser = localStorage.getItem(STORAGE_KEYS.USER_INFO)
     
     if (savedToken && savedUser) {
       token.value = savedToken
-      if (!getCookie(COOKIE_KEYS.AUTH_TOKEN)) {
-        setCookie(COOKIE_KEYS.AUTH_TOKEN, savedToken, {
-          maxAge: 60 * 60 * 24 * 7
-        })
-      }
-
-      localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN)
       try {
         user.value = JSON.parse(savedUser)
       } catch (e) {
@@ -85,13 +76,7 @@ export const useAuthStore = defineStore('auth', () => {
       }
     } else if (savedToken) {
       token.value = savedToken
-      if (!getCookie(COOKIE_KEYS.AUTH_TOKEN)) {
-        setCookie(COOKIE_KEYS.AUTH_TOKEN, savedToken, {
-          maxAge: 60 * 60 * 24 * 7
-        })
-      }
-
-      localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN)
+      user.value = null
     }
   }
 

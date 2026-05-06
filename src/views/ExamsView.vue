@@ -7,6 +7,7 @@ import ExamFiltersPanel from '@/components/exams/ExamFiltersPanel.vue'
 import ExamTable from '@/components/exams/ExamTable.vue'
 import ExamFormDialog from '@/components/exams/ExamFormDialog.vue'
 import ExamDetailDialog from '@/components/exams/ExamDetailDialog.vue'
+import { normalizeCollection, normalizeSubject, normalizeTopic, normalizeQuestion, normalizeExam, normalizeExamQuestion } from '@/utils/normalizers'
 
 const exams = ref([])
 const router = useRouter()
@@ -61,54 +62,11 @@ const examTypeOptions = [
   { value: 'MIXED', label: 'Hỗn hợp' }
 ]
 
-function normalizeCollection(payload) {
-  const raw = payload?.data ?? payload
-  if (Array.isArray(raw)) return raw
-  if (Array.isArray(raw?.items)) return raw.items
-  if (Array.isArray(raw?.content)) return raw.content
-  if (Array.isArray(raw?.results)) return raw.results
-  return []
-}
-
-function normalizeSubject(item) {
-  return {
-    id: item?.id ?? item?._id,
-    name: item?.name ?? '',
-    levelId: item?.levelId ?? '',
-    levelName: item?.levelName ?? ''
-  }
-}
-
 function getSubjectDisplayLabel(subject) {
   if (!subject) return '—'
 
   const levelLabel = subject.levelName || ''
   return levelLabel ? `${subject.name} - ${levelLabel}` : subject.name || '—'
-}
-
-function normalizeTopic(item) {
-  return {
-    id: item?.id ?? item?._id,
-    name: item?.name ?? '',
-    subjectId: item?.subjectId ?? '',
-    subjectName: item?.subjectName ?? '',
-    levelId: item?.levelId ?? '',
-    levelName: item?.levelName ?? ''
-  }
-}
-
-function normalizeQuestion(item) {
-  return {
-    id: item?.id ?? item?._id,
-    content: item?.content ?? '',
-    topicId: item?.topicId ?? '',
-    topicName: item?.topicName ?? '',
-    type: item?.type ?? item?.questionType ?? '',
-    difficulty: item?.difficulty ?? '',
-    options: Array.isArray(item?.options) ? item.options : [],
-    sampleAnswer: item?.sampleAnswer ?? '',
-    explanation: item?.explanation ?? ''
-  }
 }
 
 function enrichQuestion(question) {
@@ -121,48 +79,6 @@ function enrichQuestion(question) {
   }
 }
 
-function normalizeExamQuestion(item, index = 0) {
-  const questionContent = item?.questionContent ?? item?.content ?? item?.contentSnapshot ?? ''
-
-  return {
-    questionId: item?.questionId ?? item?.id ?? null,
-    questionContent,
-    content: item?.content ?? questionContent,
-    contentSnapshot: item?.contentSnapshot ?? questionContent,
-    topicId: item?.topicId ?? '',
-    topicName: item?.topicName ?? '',
-    subjectId: item?.subjectId ?? '',
-    subjectName: item?.subjectName ?? '',
-    type: item?.type ?? '',
-    difficulty: item?.difficulty ?? '',
-    orderIndex: Number(item?.orderIndex ?? index + 1) || index + 1,
-    score: Number(item?.score ?? 1) || 1
-  }
-}
-
-function normalizeExam(item) {
-  const questionsData = Array.isArray(item?.questions) ? item.questions : []
-
-  return {
-    id: item?.id ?? item?._id,
-    title: item?.title ?? '',
-    subjectId: item?.subjectId ?? '',
-    subjectName: item?.subjectName ?? '',
-    createdByUsername: item?.createdByUsername ?? '',
-    duration: Number(item?.duration ?? 0) || 0,
-    isActive: !!item?.isActive,
-    startTime: item?.startTime ?? '',
-    endTime: item?.endTime ?? '',
-    totalScore: Number(item?.totalScore ?? 0) || 0,
-    type: item?.type ?? 'MULTIPLE_CHOICE',
-    shuffleQuestions: !!item?.shuffleQuestions,
-    shuffleAnswers: !!item?.shuffleAnswers,
-    maxAttempts: Number(item?.maxAttempts ?? 1) || 1,
-    createdAt: item?.createdAt ?? '',
-    updatedAt: item?.updatedAt ?? '',
-    questions: questionsData.map((question, index) => normalizeExamQuestion(question, index))
-  }
-}
 
 function getSubjectName(subjectId, fallbackName = '') {
   const subject = subjects.value.find(item => String(item.id) === String(subjectId))

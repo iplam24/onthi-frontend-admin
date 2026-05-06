@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { API_CONFIG, COOKIE_KEYS, HTTP_STATUS, STORAGE_KEYS } from '@/constants'
+import { API_CONFIG, COOKIE_KEYS, HTTP_STATUS } from '@/constants'
 import { deleteCookie, getCookie } from '@/services/cookie'
 
 const apiClient = axios.create({
@@ -36,8 +36,6 @@ apiClient.interceptors.response.use(
     ) {
       // Token hết hạn, xóa token và redirect về login
       deleteCookie(COOKIE_KEYS.AUTH_TOKEN)
-      localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN)
-      localStorage.removeItem(STORAGE_KEYS.USER_INFO)
       window.location.href = '/login'
     }
     return Promise.reject(error)
