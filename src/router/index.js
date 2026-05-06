@@ -65,6 +65,12 @@ const router = createRouter({
       name: 'ExamCreate',
       component: () => import('@/views/ExamCreateView.vue'),
       meta: { requiresAuth: true }
+    },
+    {
+      path: '/countdowns',
+      name: 'Countdowns',
+      component: () => import('../views/CountdownsView.vue'),
+      meta: { requiresAuth: true }
     }
   ]
 })

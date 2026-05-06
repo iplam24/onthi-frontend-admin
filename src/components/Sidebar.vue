@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
-import { ChevronDown, LayoutDashboard, BookOpenText, Layers3, HelpCircle, ClipboardList } from 'lucide-vue-next'
+import { ChevronDown, LayoutDashboard, BookOpenText, Layers3, HelpCircle, ClipboardList, TimerReset } from 'lucide-vue-next'
 
 const route = useRoute()
 const isLearningOpen = ref(true)
@@ -24,6 +24,12 @@ const navItems = [
 	description: 'Quản lý đề thi',
 	to: '/exams',
 	icon: ClipboardList
+  },
+  {
+	label: 'Countdown',
+	description: 'Đếm ngày tới kỳ thi',
+	to: '/countdowns',
+	icon: TimerReset
   }
 ]
 

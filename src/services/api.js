@@ -53,6 +53,8 @@ export const examsAPI = {
 
 export const questionsAPI = createCrudApi('/questions')
 
+export const countdownsAPI = createCrudApi('/countdowns')
+
 // Auth API
 export const authAPI = {
   login(credentials) {

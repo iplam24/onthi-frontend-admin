@@ -100,3 +100,13 @@ export function normalizeExam(item) {
     questions: questionsData.map((question, index) => normalizeExamQuestion(question, index))
   }
 }
+
+export function normalizeCountdown(item) {
+  return {
+    id: item?.id ?? item?._id,
+    title: item?.title ?? '',
+    examDate: item?.examDate ?? '',
+    levelId: item?.levelId ?? '',
+    levelName: item?.levelName ?? ''
+  }
+}
