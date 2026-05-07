@@ -8,6 +8,7 @@ import ExamTable from '@/components/exams/ExamTable.vue'
 import ExamFormDialog from '@/components/exams/ExamFormDialog.vue'
 import ExamDetailDialog from '@/components/exams/ExamDetailDialog.vue'
 import { normalizeCollection, normalizeSubject, normalizeTopic, normalizeQuestion, normalizeExam, normalizeExamQuestion } from '@/utils/normalizers'
+import { EXAM_LAYOUT_HINTS } from '@/constants'
 
 const exams = ref([])
 const router = useRouter()
@@ -54,6 +55,7 @@ const formState = reactive({
   shuffleQuestions: false,
   shuffleAnswers: false,
   maxAttempts: 1,
+  uiLayoutHint: 'STANDARD',
   questions: []
 })
 
@@ -181,6 +183,7 @@ function resetForm() {
   formState.shuffleQuestions = false
   formState.shuffleAnswers = false
   formState.maxAttempts = 1
+  formState.uiLayoutHint = 'STANDARD'
   formState.questions = []
   editId.value = null
   isEditing.value = false
@@ -356,6 +359,7 @@ async function openEditDialog(exam) {
     formState.shuffleQuestions = examData.shuffleQuestions
     formState.shuffleAnswers = examData.shuffleAnswers
     formState.maxAttempts = examData.maxAttempts || 1
+    formState.uiLayoutHint = examData.uiLayoutHint || 'STANDARD'
     formState.questions = examData.questions.map((question, index) => ({
       ...normalizeExamQuestion(question, index)
     }))
@@ -387,6 +391,7 @@ async function openEditDialog(exam) {
     formState.shuffleQuestions = !!exam.shuffleQuestions
     formState.shuffleAnswers = !!exam.shuffleAnswers
     formState.maxAttempts = Number(exam.maxAttempts ?? 1) || 1
+    formState.uiLayoutHint = exam.uiLayoutHint || 'STANDARD'
     formState.questions = Array.isArray(exam.questions)
       ? exam.questions.map((question, index) => normalizeExamQuestion(question, index))
       : []
@@ -507,6 +512,7 @@ async function handleSubmitExam() {
       shuffleQuestions: !!formState.shuffleQuestions,
       shuffleAnswers: !!formState.shuffleAnswers,
       maxAttempts: Number(formState.maxAttempts) || 1,
+      uiLayoutHint: formState.uiLayoutHint,
       questions: getRequestQuestionsPayload()
     }
 
@@ -589,6 +595,7 @@ onMounted(loadData)
       :is-editing="isEditing"
       :subjects="subjects"
       :exam-type-options="examTypeOptions"
+      :exam-layout-hints="EXAM_LAYOUT_HINTS"
       :form-state="formState"
       :selected-question-count="selectedQuestionCount"
       :selected-question-total-score="selectedQuestionTotalScore"

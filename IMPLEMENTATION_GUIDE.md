@@ -146,6 +146,15 @@ App dùng các CSS variables:
 - [ ] Add role-based access control (RBAC)
 - [ ] Error handling & toast notifications
 - [ ] Dark mode toggle
+- [ ] **[NEW]** Tích hợp hiển thị AI Feedback:
+    - Render trường `feedback` trong kết quả chấm câu tự luận.
+    - Hiển thị nhãn `gradingMethod` (ví dụ: "Chấm bằng AI") để người dùng phân biệt.
+- [ ] **[NEW]** Cấu hình UI Layout theo `uiLayoutHint`:
+    - `STANDARD`: Giao diện danh sách câu hỏi thông thường.
+    - `LITERATURE`: Giao diện chuyên biệt cho đề văn (đề bài bên trái, bài làm bên phải).
+    - `ESSAY`: Tối ưu cho các bài tập tự luận dài.
+- [ ] **[NEW]** Hiển thị Đề thi theo `sections`:
+    - Sử dụng mảng `sections` từ Backend để render các khối "Phần 1", "Phần 2" thay vì render danh sách phẳng.
 
 ## 🐛 Troubleshooting
 
@@ -169,4 +178,3 @@ App tự động:
 ---
 
 **Last Updated**: April 2026
-

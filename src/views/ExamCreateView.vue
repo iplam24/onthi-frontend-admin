@@ -5,6 +5,7 @@ import { ArrowLeft } from 'lucide-vue-next'
 import { examsAPI, questionsAPI, subjectsAPI, topicsAPI } from '@/services/api'
 import ExamFormWorkspace from '@/components/exams/ExamFormWorkspace.vue'
 import { normalizeCollection, normalizeSubject, normalizeTopic, normalizeQuestion } from '@/utils/normalizers'
+import { EXAM_LAYOUT_HINTS } from '@/constants'
 
 const router = useRouter()
 
@@ -28,6 +29,7 @@ const formState = reactive({
   shuffleQuestions: false,
   shuffleAnswers: false,
   maxAttempts: 1,
+  uiLayoutHint: 'STANDARD',
   questions: []
 })
 
@@ -146,6 +148,7 @@ function resetForm() {
   formState.shuffleQuestions = false
   formState.shuffleAnswers = false
   formState.maxAttempts = 1
+  formState.uiLayoutHint = 'STANDARD'
   formState.questions = []
   questionPool.value = []
   questionSearch.value = ''
@@ -297,6 +300,7 @@ async function handleSubmitExam() {
       shuffleQuestions: !!formState.shuffleQuestions,
       shuffleAnswers: !!formState.shuffleAnswers,
       maxAttempts: Number(formState.maxAttempts) || 1,
+      uiLayoutHint: formState.uiLayoutHint,
       questions: getRequestQuestionsPayload()
     })
 
@@ -368,6 +372,7 @@ onMounted(async () => {
         :get-type-label="getTypeLabel"
         :get-difficulty-label="getDifficultyLabel"
         :is-question-selected="isQuestionSelected"
+        :exam-layout-hints="EXAM_LAYOUT_HINTS"
         submit-text="Tạo đề thi"
         cancel-text="Quay lại"
         @cancel="goBack"

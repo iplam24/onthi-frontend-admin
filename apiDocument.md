@@ -125,7 +125,16 @@ This document provides a comprehensive overview of all the APIs available in the
         "attemptId": 123,
         "score": 8.5,
         "totalCorrect": 17,
-        "totalIncorrect": 3
+        "totalIncorrect": 3,
+        "answers": [
+          {
+            "questionId": 10,
+            "essayAnswer": "Bài làm văn của học sinh...",
+            "score": 4.5,
+            "feedback": "AI Nhận xét: Bài viết có ý tốt, bố cục rõ ràng nhưng thiếu ví dụ.",
+            "gradingMethod": "Chấm bằng Gemini AI"
+          }
+        ]
       }
     }
     ```
@@ -144,6 +153,15 @@ This document provides a comprehensive overview of all the APIs available in the
         "attemptId": 123,
         "examId": 1,
         "score": 8.5,
+        "answers": [
+          {
+            "questionId": 10,
+            "essayAnswer": "...",
+            "score": 4.5,
+            "feedback": "AI Nhận xét:...",
+            "gradingMethod": "Chấm bằng Gemini AI"
+          }
+        ],
         "startTime": "2023-10-27T10:00:00Z",
         "endTime": "2023-10-27T10:45:00Z"
       }
@@ -209,11 +227,22 @@ This document provides a comprehensive overview of all the APIs available in the
             "isActive": true,
             "totalScore": 10.0,
             "type": "MULTIPLE_CHOICE",
+            "uiLayoutHint": "LITERATURE",
             "shuffleQuestions": true,
             "shuffleAnswers": true,
             "maxAttempts": 1,
             "createdAt": "2026-04-22T10:00:00",
             "updatedAt": null,
+            "sections": [
+              {
+                "title": "Phần 1 - Trắc nghiệm",
+                "questions": [ { "questionId": 101, "orderIndex": 1, "score": 1.0 } ]
+              },
+              {
+                "title": "Phần 2 - Tự luận",
+                "questions": [ { "questionId": 102, "orderIndex": 2, "score": 5.0 } ]
+              }
+            ],
             "questions": [
               {
                 "questionId": 101,
@@ -285,7 +314,8 @@ This document provides a comprehensive overview of all the APIs available in the
       "subjectId": 2,
       "duration": 90,
       "isActive": true,
-      "type": "MULTIPLE_CHOICE"
+      "type": "MULTIPLE_CHOICE",
+      "uiLayoutHint": "STANDARD"
     }
     ```
 
@@ -304,6 +334,7 @@ This document provides a comprehensive overview of all the APIs available in the
         "duration": 90,
         "isActive": true,
         "totalScore": 10.0,
+        "uiLayoutHint": "STANDARD",
         "type": "MULTIPLE_CHOICE",
         "shuffleQuestions": false,
         "shuffleAnswers": false,

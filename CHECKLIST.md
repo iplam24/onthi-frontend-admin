@@ -73,6 +73,9 @@
 - [ ] **UI Improvements**
   - [ ] Add loading spinner component
   - [ ] Add toast/notification component
+  - [x] **[UPDATE]** Define UI Layout Hints (STANDARD, LITERATURE, ESSAY)
+  - [ ] Render Exam Sections (Phần 1, Phần 2...)
+  - [ ] Display AI Feedback for Essay questions
   - [ ] Add error boundary
   - [ ] Add 404 page
   - [ ] Improve error handling
@@ -172,4 +175,3 @@
 
 **Last Updated**: April 2026  
 **Status**: Core features complete, ready for backend integration
-

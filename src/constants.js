@@ -43,4 +43,12 @@ export const MESSAGE_TYPES = {
   WARNING: 'warning',
 }
 
+// Exam Layout Hints
+export const EXAM_LAYOUT_HINTS = [
+  { value: 'STANDARD', label: 'Mặc định' },
+  { value: 'LITERATURE', label: 'Đề văn nghị luận' },
+  { value: 'ESSAY', label: '100% Tự luận' },
+  { value: 'MIXED', label: 'Hỗn hợp' }
+]
+
 

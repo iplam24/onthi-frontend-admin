@@ -82,6 +82,10 @@ const props = defineProps({
   isQuestionSelected: {
     type: Function,
     default: () => false
+  },
+  examLayoutHints: {
+    type: Array,
+    default: () => []
   }
 })
 
@@ -111,6 +115,7 @@ const emit = defineEmits([
         :is-editing="isEditing"
         :subjects="subjects"
         :exam-type-options="examTypeOptions"
+        :exam-layout-hints="examLayoutHints"
         :form-state="formState"
         :selected-question-count="selectedQuestionCount"
         :selected-question-total-score="selectedQuestionTotalScore"

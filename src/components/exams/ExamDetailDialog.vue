@@ -92,7 +92,7 @@ const safeExam = computed(() => ({
         </div>
       </div>
 
-      <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         <div class="rounded-xl border border-border bg-background p-4">
           <p class="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Người tạo</p>
           <p class="mt-2 text-base font-semibold text-foreground">{{ safeExam.createdByUsername || '—' }}</p>
@@ -106,10 +106,14 @@ const safeExam = computed(() => ({
           <p class="mt-2 text-base font-semibold text-foreground">{{ formatDateTime(safeExam.updatedAt) }}</p>
         </div>
         <div class="rounded-xl border border-border bg-background p-4">
-          <p class="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Trộn câu hỏi / đáp án</p>
+          <p class="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Trộn câu/đáp án</p>
           <p class="mt-2 text-base font-semibold text-foreground">
-            {{ safeExam.shuffleQuestions ? 'Có' : 'Không' }} / {{ safeExam.shuffleAnswers ? 'Có' : 'Không' }}
+            {{ safeExam.shuffleQuestions ? 'Q' : '-' }} / {{ safeExam.shuffleAnswers ? 'A' : '-' }}
           </p>
+        </div>
+        <div class="rounded-xl border border-border bg-background p-4">
+          <p class="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Bố cục (Layout)</p>
+          <p class="mt-2 text-base font-semibold text-foreground">{{ safeExam.uiLayoutHint || 'STANDARD' }}</p>
         </div>
       </div>
 

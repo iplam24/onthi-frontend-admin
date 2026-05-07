@@ -87,6 +87,10 @@ const props = defineProps({
   cancelText: {
     type: String,
     default: 'Hủy'
+  },
+  examLayoutHints: {
+    type: Array,
+    default: () => []
   }
 })
 
@@ -172,6 +176,19 @@ const emit = defineEmits([
           class="w-full rounded-md border border-input bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
         >
           <option v-for="option in examTypeOptions" :key="option.value" :value="option.value">
+            {{ option.label }}
+          </option>
+        </select>
+      </div>
+
+      <div class="space-y-2">
+        <label for="exam-layout-hint" class="text-sm font-medium text-foreground">Bố cục hiển thị (Layout)</label>
+        <select
+          id="exam-layout-hint"
+          v-model="formState.uiLayoutHint"
+          class="w-full rounded-md border border-input bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+        >
+          <option v-for="option in examLayoutHints" :key="option.value" :value="option.value">
             {{ option.label }}
           </option>
         </select>
