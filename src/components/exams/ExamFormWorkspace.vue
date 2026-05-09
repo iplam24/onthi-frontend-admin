@@ -108,25 +108,26 @@ const emit = defineEmits([
 </script>
 
 <template>
-  <div class="space-y-6">
-    <div class="grid gap-4 lg:grid-cols-2">
-      <div class="space-y-2 lg:col-span-2">
-        <label for="exam-title" class="text-sm font-medium text-foreground">Tên đề thi</label>
+  <div class="space-y-10">
+    <!-- Basic Information Grid -->
+    <div class="grid gap-8 lg:grid-cols-2">
+      <div class="space-y-3 lg:col-span-2">
+        <label for="exam-title" class="text-xs font-black uppercase tracking-widest text-muted-foreground/70">Tiêu đề đề thi</label>
         <input
           id="exam-title"
           v-model="formState.title"
           type="text"
-          placeholder="Nhập tên đề thi"
-          class="w-full rounded-md border border-input bg-background px-3 py-2 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+          placeholder="Nhập tên đề thi hiển thị cho học sinh..."
+          class="app-input !text-lg !font-bold"
         />
       </div>
 
-      <div class="space-y-2">
-        <label for="exam-subject" class="text-sm font-medium text-foreground">Môn học</label>
+      <div class="space-y-3">
+        <label for="exam-subject" class="text-xs font-black uppercase tracking-widest text-muted-foreground/70">Môn học áp dụng</label>
         <select
           id="exam-subject"
           v-model="formState.subjectId"
-          class="w-full rounded-md border border-input bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+          class="app-select"
           @change="emit('subject-change')"
         >
           <option value="">-- Chọn môn học --</option>
@@ -136,44 +137,44 @@ const emit = defineEmits([
         </select>
       </div>
 
-      <div class="space-y-2">
-        <label for="exam-duration" class="text-sm font-medium text-foreground">Thời lượng (phút)</label>
+      <div class="space-y-3">
+        <label for="exam-duration" class="text-xs font-black uppercase tracking-widest text-muted-foreground/70">Thời lượng (phút)</label>
         <input
           id="exam-duration"
           v-model.number="formState.duration"
           type="number"
           min="1"
           step="1"
-          class="w-full rounded-md border border-input bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+          class="app-input"
         />
       </div>
 
-      <div class="space-y-2">
-        <label for="exam-start-time" class="text-sm font-medium text-foreground">Thời gian bắt đầu</label>
+      <div class="space-y-3">
+        <label for="exam-start-time" class="text-xs font-black uppercase tracking-widest text-muted-foreground/70">Ngày bắt đầu</label>
         <input
           id="exam-start-time"
           v-model="formState.startTime"
           type="datetime-local"
-          class="w-full rounded-md border border-input bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+          class="app-input"
         />
       </div>
 
-      <div class="space-y-2">
-        <label for="exam-end-time" class="text-sm font-medium text-foreground">Thời gian kết thúc</label>
+      <div class="space-y-3">
+        <label for="exam-end-time" class="text-xs font-black uppercase tracking-widest text-muted-foreground/70">Ngày kết thúc</label>
         <input
           id="exam-end-time"
           v-model="formState.endTime"
           type="datetime-local"
-          class="w-full rounded-md border border-input bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+          class="app-input"
         />
       </div>
 
-      <div class="space-y-2">
-        <label for="exam-type" class="text-sm font-medium text-foreground">Loại đề</label>
+      <div class="space-y-3">
+        <label for="exam-type" class="text-xs font-black uppercase tracking-widest text-muted-foreground/70">Cấu trúc đề</label>
         <select
           id="exam-type"
           v-model="formState.type"
-          class="w-full rounded-md border border-input bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+          class="app-select"
         >
           <option v-for="option in examTypeOptions" :key="option.value" :value="option.value">
             {{ option.label }}
@@ -181,12 +182,12 @@ const emit = defineEmits([
         </select>
       </div>
 
-      <div class="space-y-2">
-        <label for="exam-layout-hint" class="text-sm font-medium text-foreground">Bố cục hiển thị (Layout)</label>
+      <div class="space-y-3">
+        <label for="exam-layout-hint" class="text-xs font-black uppercase tracking-widest text-muted-foreground/70">Giao diện hiển thị</label>
         <select
           id="exam-layout-hint"
           v-model="formState.uiLayoutHint"
-          class="w-full rounded-md border border-input bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+          class="app-select"
         >
           <option v-for="option in examLayoutHints" :key="option.value" :value="option.value">
             {{ option.label }}
@@ -194,44 +195,50 @@ const emit = defineEmits([
         </select>
       </div>
 
-      <div class="grid gap-3 sm:grid-cols-3 lg:col-span-2">
-        <label class="inline-flex items-center gap-2 rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground">
-          <input v-model="formState.isActive" type="checkbox" class="h-4 w-4" />
-          Đang kích hoạt
+      <div class="grid gap-4 sm:grid-cols-3 lg:col-span-2">
+        <label class="group flex cursor-pointer items-center gap-3 rounded-2xl border border-border/50 bg-white/50 p-4 transition-all hover:bg-primary/5 dark:bg-black/20">
+          <input v-model="formState.isActive" type="checkbox" class="h-5 w-5 rounded border-border text-primary focus:ring-primary/20" />
+          <span class="text-sm font-bold text-foreground">Kích hoạt đề</span>
         </label>
-        <label class="inline-flex items-center gap-2 rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground">
-          <input v-model="formState.shuffleQuestions" type="checkbox" class="h-4 w-4" />
-          Trộn câu hỏi
+        <label class="group flex cursor-pointer items-center gap-3 rounded-2xl border border-border/50 bg-white/50 p-4 transition-all hover:bg-primary/5 dark:bg-black/20">
+          <input v-model="formState.shuffleQuestions" type="checkbox" class="h-5 w-5 rounded border-border text-primary focus:ring-primary/20" />
+          <span class="text-sm font-bold text-foreground">Trộn câu hỏi</span>
         </label>
-        <label class="inline-flex items-center gap-2 rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground">
-          <input v-model="formState.shuffleAnswers" type="checkbox" class="h-4 w-4" />
-          Trộn đáp án
+        <label class="group flex cursor-pointer items-center gap-3 rounded-2xl border border-border/50 bg-white/50 p-4 transition-all hover:bg-primary/5 dark:bg-black/20">
+          <input v-model="formState.shuffleAnswers" type="checkbox" class="h-5 w-5 rounded border-border text-primary focus:ring-primary/20" />
+          <span class="text-sm font-bold text-foreground">Trộn đáp án</span>
         </label>
       </div>
 
-      <div class="space-y-2">
-        <label for="exam-max-attempts" class="text-sm font-medium text-foreground">Số lần làm tối đa</label>
+      <div class="space-y-3">
+        <label for="exam-max-attempts" class="text-xs font-black uppercase tracking-widest text-muted-foreground/70">Số lần làm tối đa</label>
         <input
           id="exam-max-attempts"
           v-model.number="formState.maxAttempts"
           type="number"
           min="1"
           step="1"
-          class="w-full rounded-md border border-input bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+          class="app-input"
         />
       </div>
 
-      <div class="rounded-xl border border-border bg-muted/30 p-4 lg:col-span-2">
-        <div class="flex flex-wrap items-center gap-3 text-sm text-foreground">
-          <span class="font-semibold">Câu hỏi đã chọn:</span>
-          <span>{{ selectedQuestionCount }} câu</span>
-          <span>·</span>
-          <span>Tổng điểm: {{ selectedQuestionTotalScore }}</span>
+      <div class="rounded-2xl bg-primary/5 border border-primary/20 p-6 lg:col-span-2">
+        <div class="flex flex-wrap items-center gap-6 text-sm">
+          <div class="flex flex-col">
+            <span class="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Câu hỏi đã chọn</span>
+            <span class="text-xl font-black text-primary">{{ selectedQuestionCount }} câu</span>
+          </div>
+          <div class="h-8 w-px bg-border/50"></div>
+          <div class="flex flex-col">
+            <span class="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Tổng điểm</span>
+            <span class="text-xl font-black text-primary">{{ selectedQuestionTotalScore }}</span>
+          </div>
         </div>
       </div>
     </div>
 
-    <div v-if="errorMessage" class="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+    <div v-if="errorMessage" class="app-surface !bg-destructive/10 border-destructive/20 p-4 text-sm text-destructive font-bold flex items-center gap-3">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
       {{ errorMessage }}
     </div>
 
@@ -262,12 +269,12 @@ const emit = defineEmits([
       />
     </div>
 
-    <div class="flex items-center justify-end gap-3 border-t border-border pt-4">
-      <button class="rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted" @click="emit('cancel')">
+    <div class="flex items-center justify-end gap-3 border-t border-border/50 pt-6">
+      <button class="app-btn-secondary !px-8" @click="emit('cancel')">
         {{ cancelText }}
       </button>
       <button
-        class="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+        class="app-btn-primary !px-12 group"
         :disabled="isSaving"
         @click="emit('submit')"
       >

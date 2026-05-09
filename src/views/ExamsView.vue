@@ -552,86 +552,98 @@ onMounted(loadData)
 </script>
 
 <template>
-  <div class="space-y-6">
-    <ExamPageHeader
-      :is-loading="isLoading"
-      :total-elements="pagination.totalElements"
-      :active-exam-count="activeExamCount"
-      :filtered-exam-label="filteredExamLabel"
-      :page="pagination.page"
-      :total-pages="pagination.totalPages"
-      @refresh="loadData"
-      @create="goToCreateExam"
-    />
+  <div class="app-page">
+    <div class="space-y-8">
+      <ExamPageHeader
+        :is-loading="isLoading"
+        :total-elements="pagination.totalElements"
+        :active-exam-count="activeExamCount"
+        :filtered-exam-label="filteredExamLabel"
+        :page="pagination.page"
+        :total-pages="pagination.totalPages"
+        @refresh="loadData"
+        @create="goToCreateExam"
+      />
 
-    <ExamFiltersPanel
-      v-model:subjectId="filters.subjectId"
-      :subjects="subjects"
-      :get-subject-name="getSubjectName"
-      @change="onSubjectFilterChange"
-    />
+      <div class="grid gap-6 lg:grid-cols-12">
+        <div class="lg:col-span-12">
+          <ExamFiltersPanel
+            v-model:subjectId="filters.subjectId"
+            :subjects="subjects"
+            :get-subject-name="getSubjectName"
+            @change="onSubjectFilterChange"
+          />
+        </div>
 
-    <div v-if="errorMessage" class="rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
-      {{ errorMessage }}
+        <div v-if="errorMessage" class="lg:col-span-12">
+          <div class="app-surface !bg-destructive/10 border-destructive/20 p-4 text-sm text-destructive font-bold flex items-center gap-3">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            {{ errorMessage }}
+          </div>
+        </div>
+
+        <div class="lg:col-span-12">
+          <ExamTable
+            :exams="exams"
+            :pagination="pagination"
+            :is-loading="isLoading"
+            :get-subject-name="getSubjectName"
+            :get-type-label="getTypeLabel"
+            :get-active-label="getActiveLabel"
+            :format-date-time="formatDateTime"
+            @prev-page="prevPage"
+            @next-page="nextPage"
+            @view="openDetailDialog"
+            @edit="openEditDialog"
+            @delete="deleteExam"
+          />
+        </div>
+      </div>
+
+      <!-- Modals -->
+      <ExamFormDialog
+        :open="isDialogOpen"
+        :is-editing="isEditing"
+        :subjects="subjects"
+        :exam-type-options="examTypeOptions"
+        :exam-layout-hints="EXAM_LAYOUT_HINTS"
+        :form-state="formState"
+        :selected-question-count="selectedQuestionCount"
+        :selected-question-total-score="selectedQuestionTotalScore"
+        :is-saving="isSaving"
+        :is-question-pool-loading="isQuestionPoolLoading"
+        :question-pool-error="questionPoolError"
+        :error-message="errorMessage"
+        :filtered-question-pool="filteredQuestionPool"
+        :selected-questions-sorted="selectedQuestionsSorted"
+        :question-search="questionSearch"
+        :get-subject-name="getSubjectName"
+        :get-topic-label="getTopicLabel"
+        :get-question-subject-label="getQuestionSubjectLabel"
+        :get-type-label="getTypeLabel"
+        :get-difficulty-label="getDifficultyLabel"
+        :is-question-selected="isQuestionSelected"
+        @close="closeDialog"
+        @submit="handleSubmitExam"
+        @subject-change="handleSubjectChangeInForm"
+        @refresh-question-pool="loadQuestionPool(formState.subjectId)"
+        @select-all-visible="selectAllVisibleQuestions"
+        @clear-selected-questions="clearSelectedQuestions"
+        @toggle-question="toggleQuestionSelection"
+        @remove-question="removeQuestionFromSelection"
+        @update:questionSearch="questionSearch = $event"
+      />
+
+      <ExamDetailDialog
+        :open="isDetailOpen"
+        :selected-exam="selectedExam"
+        :get-subject-name="getSubjectName"
+        :get-type-label="getTypeLabel"
+        :get-active-label="getActiveLabel"
+        :format-date-time="formatDateTime"
+        @close="closeDetailDialog"
+      />
     </div>
-
-    <ExamTable
-      :exams="exams"
-      :pagination="pagination"
-      :is-loading="isLoading"
-      :get-subject-name="getSubjectName"
-      :get-type-label="getTypeLabel"
-      :get-active-label="getActiveLabel"
-      :format-date-time="formatDateTime"
-      @prev-page="prevPage"
-      @next-page="nextPage"
-      @view="openDetailDialog"
-      @edit="openEditDialog"
-      @delete="deleteExam"
-    />
-
-    <ExamFormDialog
-      :open="isDialogOpen"
-      :is-editing="isEditing"
-      :subjects="subjects"
-      :exam-type-options="examTypeOptions"
-      :exam-layout-hints="EXAM_LAYOUT_HINTS"
-      :form-state="formState"
-      :selected-question-count="selectedQuestionCount"
-      :selected-question-total-score="selectedQuestionTotalScore"
-      :is-saving="isSaving"
-      :is-question-pool-loading="isQuestionPoolLoading"
-      :question-pool-error="questionPoolError"
-      :error-message="errorMessage"
-      :filtered-question-pool="filteredQuestionPool"
-      :selected-questions-sorted="selectedQuestionsSorted"
-      :question-search="questionSearch"
-      :get-subject-name="getSubjectName"
-      :get-topic-label="getTopicLabel"
-      :get-question-subject-label="getQuestionSubjectLabel"
-      :get-type-label="getTypeLabel"
-      :get-difficulty-label="getDifficultyLabel"
-      :is-question-selected="isQuestionSelected"
-      @close="closeDialog"
-      @submit="handleSubmitExam"
-      @subject-change="handleSubjectChangeInForm"
-      @refresh-question-pool="loadQuestionPool(formState.subjectId)"
-      @select-all-visible="selectAllVisibleQuestions"
-      @clear-selected-questions="clearSelectedQuestions"
-      @toggle-question="toggleQuestionSelection"
-      @remove-question="removeQuestionFromSelection"
-      @update:questionSearch="questionSearch = $event"
-    />
-
-    <ExamDetailDialog
-      :open="isDetailOpen"
-      :selected-exam="selectedExam"
-      :get-subject-name="getSubjectName"
-      :get-type-label="getTypeLabel"
-      :get-active-label="getActiveLabel"
-      :format-date-time="formatDateTime"
-      @close="closeDetailDialog"
-    />
   </div>
 </template>
 

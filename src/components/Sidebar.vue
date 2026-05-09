@@ -68,66 +68,82 @@ if (isLearningRoute.value) {
 </script>
 
 <template>
-  <aside class="border-b border-border/60 bg-card/75 backdrop-blur-xl lg:sticky lg:top-16 lg:h-[calc(100vh-4rem)] lg:w-80 lg:border-b-0 lg:border-r">
-	<div class="flex items-center justify-between border-b border-border/60 px-4 py-4 lg:px-6">
-	  <div>
-		<p class="text-[11px] font-semibold uppercase tracking-[0.3em] text-muted-foreground">Admin Panel</p>
-		<h2 class="mt-1 text-lg font-semibold text-foreground">{{ currentLabel }}</h2>
-	  </div>
-	</div>
+  <aside class="relative z-30 lg:sticky lg:top-20 lg:h-[calc(100vh-6rem)] lg:w-85 p-4 lg:p-6">
+    <div class="app-surface h-full flex flex-col border-white/30 dark:border-white/10 shadow-2xl">
+      <!-- Admin Branding -->
+      <div class="px-6 py-8">
+        <div class="flex items-center gap-3">
+          <div class="h-10 w-10 rounded-xl bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/30">
+            <LayoutDashboard class="h-6 w-6" />
+          </div>
+          <div>
+            <p class="text-[10px] font-extrabold uppercase tracking-[0.3em] text-primary">Core Admin</p>
+            <h2 class="text-xl font-bold text-foreground tracking-tight">{{ currentLabel }}</h2>
+          </div>
+        </div>
+      </div>
 
-	<nav class="grid gap-2 p-4 sm:grid-cols-2 lg:grid-cols-1 lg:p-5">
-	  <RouterLink
-		v-for="item in navItems"
-		:key="item.to"
-		:to="item.to"
-		class="group rounded-2xl border border-border/70 bg-background/80 px-4 py-3 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-primary/5"
-		active-class="border-primary/30 bg-primary/10 text-primary shadow-sm"
-		exact-active-class="border-primary/30 bg-primary/10 text-primary shadow-sm"
-	  >
-		<div class="flex items-start gap-3">
-		  <component :is="item.icon" class="mt-0.5 h-5 w-5 shrink-0" />
-		  <div class="min-w-0">
-			<p class="font-medium">{{ item.label }}</p>
-			<p class="mt-1 text-sm text-muted-foreground group-hover:text-foreground">{{ item.description }}</p>
-		  </div>
-		</div>
-	  </RouterLink>
+      <!-- Navigation -->
+      <nav class="flex-1 overflow-y-auto px-4 pb-6 scrollbar-hide">
+        <div class="space-y-1.5">
+          <RouterLink
+            v-for="(item, index) in navItems"
+            :key="item.to"
+            :to="item.to"
+            class="group relative flex items-center gap-4 rounded-2xl px-4 py-3.5 transition-all duration-300 hover:bg-white/50 dark:hover:bg-white/5"
+            :class="[index % 2 === 0 ? 'stagger-1' : 'stagger-2']"
+            active-class="bg-primary shadow-lg shadow-primary/25 !text-white"
+          >
+            <component :is="item.icon" class="h-5 w-5 shrink-0 transition-transform group-hover:scale-110" />
+            <div class="min-w-0">
+              <p class="font-bold text-sm leading-none">{{ item.label }}</p>
+              <p class="mt-1 text-[11px] font-medium opacity-70 group-hover:opacity-100 line-clamp-1" 
+                 :class="{ 'text-white/80': route.path === item.to }">
+                {{ item.description }}
+              </p>
+            </div>
+            <!-- Active Indicator Pill -->
+            <div v-if="route.path === item.to" class="absolute left-0 h-6 w-1 rounded-r-full bg-white"></div>
+          </RouterLink>
+        </div>
 
-	  <div class="overflow-hidden rounded-2xl border border-border/70 bg-background/80">
-		<button
-		  type="button"
-		  class="flex w-full items-center justify-between px-4 py-3 text-left transition-colors hover:bg-muted/50"
-		  :class="{ 'text-primary': isLearningRoute }"
-		  @click="isLearningOpen = !isLearningOpen"
-		>
-		  <div>
-			<p class="font-medium">Học liệu</p>
-			<p class="mt-1 text-sm text-muted-foreground">Cấp độ, môn học, chủ đề</p>
-		  </div>
-		  <ChevronDown class="h-4 w-4 transition-transform" :class="{ 'rotate-180': isLearningOpen }" />
-		</button>
+        <div class="mt-8 px-4 mb-4">
+          <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/60">Học liệu & Hệ thống</p>
+        </div>
 
-		<div v-show="isLearningOpen" class="border-t border-border/60 p-2">
-		  <RouterLink
-			v-for="item in learningItems"
-			:key="item.to"
-			:to="item.to"
-			class="group mb-2 block rounded-xl border border-border/70 bg-card/80 px-3 py-2 transition-all last:mb-0 hover:-translate-y-0.5 hover:border-primary/40 hover:bg-primary/5"
-			active-class="border-primary/30 bg-primary/10 text-primary shadow-sm"
-			exact-active-class="border-primary/30 bg-primary/10 text-primary shadow-sm"
-		  >
-			<div class="flex items-start gap-3">
-			  <component :is="item.icon" class="mt-0.5 h-4 w-4 shrink-0" />
-			  <div class="min-w-0">
-				<p class="text-sm font-medium">{{ item.label }}</p>
-				<p class="mt-1 text-xs text-muted-foreground group-hover:text-foreground">{{ item.description }}</p>
-			  </div>
-			</div>
-		  </RouterLink>
-		</div>
-	  </div>
-	</nav>
+        <div class="space-y-1.5">
+          <div class="overflow-hidden rounded-2xl transition-all duration-500" 
+               :class="isLearningOpen ? 'bg-white/30 dark:bg-black/20 ring-1 ring-white/20' : ''">
+            <button
+              type="button"
+              class="flex w-full items-center justify-between px-4 py-4 text-left transition-all hover:bg-white/40 dark:hover:bg-white/5"
+              @click="isLearningOpen = !isLearningOpen"
+            >
+              <div class="flex items-center gap-4">
+                <BookOpenText class="h-5 w-5 text-primary" />
+                <span class="font-bold text-sm">Quản lý Học liệu</span>
+              </div>
+              <ChevronDown class="h-4 w-4 transition-transform duration-500" :class="{ 'rotate-180': isLearningOpen }" />
+            </button>
+
+            <div v-show="isLearningOpen" class="px-2 pb-2 space-y-1 animate-in fade-in zoom-in-95 duration-300">
+              <RouterLink
+                v-for="item in learningItems"
+                :key="item.to"
+                :to="item.to"
+                class="group flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-300 hover:bg-white/50 dark:hover:bg-white/10"
+                active-class="!bg-primary/10 !text-primary ring-1 ring-primary/20"
+              >
+                <component :is="item.icon" class="h-4 w-4 shrink-0" />
+                <div class="min-w-0">
+                  <p class="text-xs font-bold">{{ item.label }}</p>
+                </div>
+              </RouterLink>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </div>
   </aside>
 </template>
 

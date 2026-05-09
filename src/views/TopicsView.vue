@@ -128,98 +128,128 @@ onMounted(loadData)
 </script>
 
 <template>
-  <div class="space-y-6">
-    <section class="rounded-2xl border border-border bg-card p-6 shadow-sm">
-      <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-          <p class="text-sm font-medium uppercase tracking-[0.25em] text-muted-foreground">Học liệu</p>
-          <h1 class="mt-2 text-3xl font-bold text-foreground">Quản lý Chủ đề</h1>
-          <p class="mt-2 text-muted-foreground">Dữ liệu đồng bộ từ API thật `/api/learning/topics`.</p>
+  <div class="app-page">
+    <div class="space-y-8">
+      <!-- Header Section -->
+      <section class="app-surface p-8 shadow-2xl">
+        <div class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <div class="app-kicker">Học liệu & Hệ thống</div>
+            <h1 class="mt-3 text-4xl font-extrabold tracking-tight text-foreground">Quản lý Chủ đề</h1>
+            <p class="mt-2 text-muted-foreground font-medium">Chi tiết hóa các chủ đề kiến thức cho từng môn học.</p>
+          </div>
+
+          <div class="flex items-center gap-4">
+            <button
+              class="app-btn-secondary !py-2.5 group"
+              :disabled="isLoading"
+              @click="loadData"
+            >
+              <RefreshCw class="h-4 w-4 transition-transform group-hover:rotate-180" :class="{ 'animate-spin': isLoading }" />
+              Làm mới
+            </button>
+
+            <button class="app-btn-primary group" @click="openCreateDialog">
+              <Plus class="h-5 w-5 transition-transform group-hover:rotate-90" />
+              Thêm chủ đề mới
+            </button>
+          </div>
         </div>
 
-        <div class="flex items-center gap-3">
-          <button
-            class="inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted"
-            :disabled="isLoading"
-            @click="loadData"
-          >
-            <RefreshCw class="h-4 w-4" :class="{ 'animate-spin': isLoading }" />
-            Làm mới
-          </button>
-
-          <button class="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90" @click="openCreateDialog">
-            <Plus class="h-4 w-4" />
-            Thêm chủ đề
-          </button>
+        <div class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div class="app-surface !bg-white/40 dark:!bg-white/5 p-5 shadow-sm">
+            <p class="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Tổng số chủ đề</p>
+            <div class="mt-2 flex items-baseline gap-2">
+              <p class="text-3xl font-black text-primary">{{ totalTopics }}</p>
+              <p class="text-xs font-bold text-muted-foreground">chủ đề</p>
+            </div>
+          </div>
         </div>
+      </section>
+
+      <!-- Main Content -->
+      <div v-if="errorMessage" class="app-surface !bg-destructive/10 border-destructive/20 p-4 text-sm text-destructive font-bold flex items-center gap-3">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        {{ errorMessage }}
       </div>
 
-      <div class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <div class="rounded-xl border border-border bg-background p-4">
-          <p class="text-sm text-muted-foreground">Tổng chủ đề</p>
-          <p class="mt-2 text-2xl font-bold text-foreground">{{ totalTopics }}</p>
+      <div class="app-surface shadow-xl">
+        <div class="border-b border-border/50 px-8 py-6 flex items-center justify-between bg-white/30 dark:bg-black/20">
+          <div>
+            <h2 class="text-xl font-bold text-foreground">Danh sách chủ đề</h2>
+            <p class="text-xs text-muted-foreground mt-1">Các chủ đề kiến thức được phân loại theo môn học.</p>
+          </div>
+          <div class="h-2 w-2 rounded-full bg-primary animate-pulse"></div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead>
+              <tr class="text-left text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 border-b border-border/40">
+                <th class="px-8 py-4">Chủ đề</th>
+                <th class="px-8 py-4">Môn học</th>
+                <th class="px-8 py-4">Cấp độ</th>
+                <th class="px-8 py-4 text-right">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-border/40">
+              <tr v-if="!topics.length && !isLoading">
+                <td colspan="4" class="px-8 py-16 text-center">
+                  <div class="flex flex-col items-center gap-2">
+                    <div class="h-12 w-12 rounded-full bg-muted/30 flex items-center justify-center">
+                      <RefreshCw class="h-6 w-6 text-muted-foreground/40" />
+                    </div>
+                    <p class="text-sm font-bold text-muted-foreground">Chưa có chủ đề nào được tạo</p>
+                  </div>
+                </td>
+              </tr>
+              <tr v-if="isLoading">
+                 <td colspan="4" class="px-8 py-16 text-center">
+                    <RefreshCw class="h-8 w-8 animate-spin mx-auto text-primary" />
+                 </td>
+              </tr>
+              <tr v-for="(topic, index) in topics" :key="topic.id" 
+                  class="group transition-colors hover:bg-primary/5"
+                  :class="[index % 2 === 0 ? 'stagger-1' : 'stagger-2']">
+                <td class="px-8 py-5">
+                  <span class="text-sm font-bold text-foreground group-hover:text-primary transition-colors">{{ topic.name }}</span>
+                </td>
+                <td class="px-8 py-5">
+                   <span class="text-sm font-medium text-foreground/80">{{ getSubjectName(topic.subjectId, topic.subjectName) }}</span>
+                </td>
+                <td class="px-8 py-5">
+                  <span class="inline-flex items-center rounded-lg bg-secondary/50 px-2.5 py-1 text-[11px] font-bold text-muted-foreground ring-1 ring-border/50">
+                    {{ getLevelName(topic.subjectId, topic.levelName) }}
+                  </span>
+                </td>
+                <td class="px-8 py-5">
+                  <div class="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button class="flex h-9 w-9 items-center justify-center rounded-xl border border-border/50 bg-white shadow-sm transition-all hover:-translate-y-1 hover:border-primary/50 hover:text-primary dark:bg-white/5" @click="openEditDialog(topic)">
+                      <Pencil class="h-4 w-4" />
+                    </button>
+                    <button class="flex h-9 w-9 items-center justify-center rounded-xl border border-destructive/20 bg-destructive/5 text-destructive shadow-sm transition-all hover:-translate-y-1 hover:bg-destructive/10" @click="deleteTopic(topic)">
+                      <Trash2 class="h-4 w-4" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
-    </section>
-
-    <div v-if="errorMessage" class="rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
-      {{ errorMessage }}
     </div>
 
-    <div class="rounded-2xl border border-border bg-card shadow-sm">
-      <div class="border-b border-border px-6 py-4">
-        <h2 class="text-xl font-semibold text-foreground">Danh sách chủ đề</h2>
-        <p class="mt-1 text-sm text-muted-foreground">Mỗi chủ đề phải gắn vào một môn học.</p>
-      </div>
-
-      <div class="overflow-x-auto">
-        <table class="min-w-full">
-          <thead>
-            <tr class="border-b border-border bg-muted/40 text-left text-sm uppercase tracking-wide text-muted-foreground">
-              <th class="px-6 py-3 font-semibold">Tên chủ đề</th>
-              <th class="px-6 py-3 font-semibold">Môn học</th>
-              <th class="px-6 py-3 font-semibold">Level</th>
-              <th class="px-6 py-3 font-semibold">Thao tác</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-if="!topics.length">
-              <td colspan="4" class="px-6 py-10 text-center text-sm text-muted-foreground">
-                Chưa có chủ đề nào.
-              </td>
-            </tr>
-            <tr v-for="topic in topics" :key="topic.id" class="border-b border-border last:border-b-0 hover:bg-muted/30">
-              <td class="px-6 py-4 text-sm text-foreground">{{ topic.name }}</td>
-              <td class="px-6 py-4 text-sm text-foreground">{{ getSubjectName(topic.subjectId, topic.subjectName) }}</td>
-              <td class="px-6 py-4 text-sm text-foreground">{{ getLevelName(topic.subjectId, topic.levelName) }}</td>
-              <td class="px-6 py-4">
-                <div class="flex gap-2">
-                  <button class="inline-flex items-center gap-1 rounded-md border border-border px-3 py-2 text-sm font-medium hover:bg-muted" @click="openEditDialog(topic)">
-                    <Pencil class="h-4 w-4" />
-                    Sửa
-                  </button>
-                  <button class="inline-flex items-center gap-1 rounded-md border border-destructive/30 px-3 py-2 text-sm font-medium text-destructive hover:bg-destructive/10" @click="deleteTopic(topic)">
-                    <Trash2 class="h-4 w-4" />
-                    Xóa
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <BaseDialog :open="isDialogOpen" :title="isEditing ? 'Sửa chủ đề' : 'Thêm chủ đề'" description="Chủ đề phải gắn đúng môn học theo document." size="md" @close="closeDialog">
-      <div class="space-y-4">
-        <div class="space-y-2">
-          <label class="text-sm font-medium text-foreground" for="topic-name">Tên chủ đề</label>
-          <input id="topic-name" v-model="formState.name" type="text" class="w-full rounded-md border border-input bg-background px-3 py-2 text-foreground" placeholder="VD: Hàm số" />
+    <!-- Modals -->
+    <BaseDialog :open="isDialogOpen" :title="isEditing ? 'Sửa chủ đề' : 'Thêm chủ đề'" description="Gán chủ đề vào môn học tương ứng." size="md" @close="closeDialog">
+      <div class="space-y-6 pt-4">
+        <div class="space-y-3">
+          <label class="text-xs font-black uppercase tracking-widest text-muted-foreground" for="topic-name">Tên chủ đề</label>
+          <input id="topic-name" v-model="formState.name" type="text" class="app-input" placeholder="VD: Hàm số, Đạo hàm..." />
         </div>
 
-        <div class="space-y-2">
-          <label class="text-sm font-medium text-foreground" for="topic-subject">Môn học</label>
-          <select id="topic-subject" v-model="formState.subjectId" class="w-full rounded-md border border-input bg-background px-3 py-2 text-foreground">
+        <div class="space-y-3">
+          <label class="text-xs font-black uppercase tracking-widest text-muted-foreground" for="topic-subject">Môn học</label>
+          <select id="topic-subject" v-model="formState.subjectId" class="app-select">
             <option value="" disabled>Chọn môn học</option>
             <option v-for="subject in subjects" :key="subject.id" :value="subject.id">
               {{ getSubjectDisplayLabel(subject) }}
@@ -227,13 +257,11 @@ onMounted(loadData)
           </select>
         </div>
 
-        <p v-if="errorMessage" class="text-sm text-destructive">{{ errorMessage }}</p>
-
-        <div class="flex items-center justify-end gap-3">
-          <button class="rounded-md border border-border px-4 py-2 text-sm font-medium hover:bg-muted" @click="closeDialog">Hủy</button>
-          <button class="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50" :disabled="isSaving" @click="saveTopic">
+        <div class="flex items-center justify-end gap-3 pt-4">
+          <button class="app-btn-secondary !px-8" @click="closeDialog">Hủy</button>
+          <button class="app-btn-primary !px-10" :disabled="isSaving" @click="saveTopic">
             <RefreshCw v-if="isSaving" class="h-4 w-4 animate-spin" />
-            Lưu
+            Lưu chủ đề
           </button>
         </div>
       </div>

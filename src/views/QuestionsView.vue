@@ -276,92 +276,107 @@ onMounted(loadData)
 </script>
 
 <template>
-  <div class="relative space-y-6 overflow-hidden rounded-[2rem] bg-gradient-to-b from-slate-50 via-background to-background p-1 dark:from-slate-950 dark:via-background dark:to-background">
-    <div class="pointer-events-none absolute inset-x-0 top-0 -z-10 h-72 bg-[radial-gradient(circle_at_top_right,_rgba(99,102,241,0.14),_transparent_35%),radial-gradient(circle_at_top_left,_rgba(14,165,233,0.12),_transparent_30%)]" />
-
-    <section class="overflow-hidden rounded-[1.5rem] border border-border/70 bg-card/85 p-4 shadow-[0_18px_50px_-28px_rgba(15,23,42,0.35)] backdrop-blur-xl sm:p-5">
-      <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-          <div class="inline-flex items-center rounded-full border border-primary/15 bg-primary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-primary">
-            Học liệu · Câu hỏi
+  <div class="app-page">
+    <div class="space-y-8">
+      <!-- Header Section -->
+      <section class="app-surface p-8 shadow-2xl overflow-hidden relative group">
+        <div class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between relative z-10">
+          <div>
+            <div class="app-kicker">Học liệu & Hệ thống</div>
+            <h1 class="mt-3 text-4xl font-extrabold tracking-tight text-foreground">Quản lý Câu hỏi</h1>
+            <p class="mt-2 text-muted-foreground font-medium">Kho lưu trữ câu hỏi trắc nghiệm và tự luận được phân loại chi tiết.</p>
           </div>
-          <h1 class="mt-3 text-3xl font-black tracking-tight text-foreground sm:text-4xl">Quản lý Câu hỏi</h1>
+
+          <button class="app-btn-primary group" @click="openCreateDialog">
+            <Plus class="h-5 w-5 transition-transform group-hover:rotate-90" />
+            Thêm câu hỏi mới
+          </button>
         </div>
 
-        <button
-          class="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-primary via-sky-600 to-cyan-500 px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition-transform hover:-translate-y-0.5 hover:shadow-xl"
-          @click="openCreateDialog"
-        >
-          <Plus class="h-4 w-4" />
-          Thêm câu hỏi
-        </button>
+        <div class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 relative z-10">
+          <div class="app-surface !bg-white/40 dark:!bg-white/5 p-5 shadow-sm">
+            <p class="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Tổng số câu hỏi</p>
+            <div class="mt-2 flex items-baseline gap-2">
+              <p class="text-3xl font-black text-primary">{{ pagination.totalElements }}</p>
+              <p class="text-xs font-bold text-muted-foreground">câu hỏi</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Decorative background circle -->
+        <div class="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-primary/10 blur-[80px]"></div>
+      </section>
+
+      <!-- Filter Section -->
+      <div class="app-surface p-6 shadow-xl">
+        <div class="mb-6">
+          <h2 class="text-base font-bold text-foreground">Bộ lọc tìm kiếm</h2>
+          <p class="text-xs text-muted-foreground">Lọc câu hỏi theo môn học và chủ đề để quản lý dễ dàng hơn.</p>
+        </div>
+
+        <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div class="space-y-2">
+            <label class="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70" for="filter-subject">Môn học</label>
+            <select
+              id="filter-subject"
+              v-model="filters.subjectId"
+              class="app-select"
+              @change="onSubjectFilterChange"
+            >
+              <option value="">Tất cả môn học</option>
+              <option v-for="subject in subjects" :key="subject.id" :value="subject.id">
+                {{ getSubjectDisplayLabel(subject) }}
+              </option>
+            </select>
+          </div>
+
+          <div class="space-y-2">
+            <label class="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70" for="filter-topic">Chủ đề (Topic)</label>
+            <select
+              id="filter-topic"
+              v-model="filters.topicId"
+              class="app-select"
+              :disabled="!filteredTopicOptions.length"
+              @change="onTopicFilterChange"
+            >
+              <option value="">Tất cả chủ đề</option>
+              <option v-for="topic in filteredTopicOptions" :key="topic.id" :value="topic.id">
+                {{ topic.name }}
+              </option>
+            </select>
+          </div>
+        </div>
       </div>
 
-      <div class="mt-2 flex items-center gap-1 rounded-2xl border border-border/60 bg-background/70 px-4 py-3 shadow-sm backdrop-blur-sm">
-        <div>
-          <p class="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">Tổng câu hỏi</p>
-          <p class="mt-1 text-2xl font-black text-foreground">{{ pagination.totalElements }}</p>
-        </div>
-      </div>
-    </section>
-
-    <div class="rounded-[1.75rem] border border-border/70 bg-card/80 p-4 shadow-[0_18px_50px_-28px_rgba(15,23,42,0.35)] backdrop-blur-xl">
-      <div class="mb-3 flex items-center justify-between gap-3">
-        <div>
-          <h2 class="text-base font-semibold text-foreground">Bộ lọc</h2>
-          <p class="text-xs text-muted-foreground">Chọn môn học hoặc topic để tải dữ liệu ngay.</p>
-        </div>
+      <!-- Main Content -->
+      <div v-if="errorMessage" class="app-surface !bg-destructive/10 border-destructive/20 p-4 text-sm text-destructive font-bold flex items-center gap-3">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        {{ errorMessage }}
       </div>
 
-      <div class="grid gap-3 md:grid-cols-2">
-        <div class="space-y-2">
-          <label for="filter-subject-id" class="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Môn học</label>
-          <select
-            id="filter-subject-id"
-            v-model="filters.subjectId"
-            class="w-full rounded-full border border-input bg-background/90 px-4 py-2.5 text-sm text-foreground shadow-sm outline-none transition focus:border-primary/40 focus:ring-4 focus:ring-primary/10"
-            @change="onSubjectFilterChange"
-          >
-            <option value="">Tất cả môn học</option>
-            <option v-for="subject in subjects" :key="subject.id" :value="subject.id">
-              {{ getSubjectDisplayLabel(subject) }}
-            </option>
-          </select>
+      <div class="app-surface shadow-xl">
+        <div class="border-b border-border/50 px-8 py-6 flex items-center justify-between bg-white/30 dark:bg-black/20">
+          <h2 class="text-xl font-bold text-foreground">Danh sách câu hỏi</h2>
+          <div class="flex items-center gap-2">
+            <div class="h-2 w-2 rounded-full bg-primary animate-pulse"></div>
+            <span class="text-xs font-bold text-muted-foreground uppercase tracking-widest">Live Data</span>
+          </div>
         </div>
 
-        <div class="space-y-2">
-          <label for="filter-topic-id" class="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Topic</label>
-          <select
-            id="filter-topic-id"
-            v-model="filters.topicId"
-            class="w-full rounded-full border border-input bg-background/90 px-4 py-2.5 text-sm text-foreground shadow-sm outline-none transition focus:border-primary/40 focus:ring-4 focus:ring-primary/10 disabled:cursor-not-allowed disabled:opacity-60"
-            :disabled="!filteredTopicOptions.length"
-            @change="onTopicFilterChange"
-          >
-            <option value="">Tất cả topic</option>
-            <option v-for="topic in filteredTopicOptions" :key="topic.id" :value="topic.id">
-              {{ topic.name }}
-            </option>
-          </select>
-        </div>
+        <QuestionTable
+          :questions="displayQuestions"
+          :pagination="pagination"
+          :is-loading="isLoading"
+          @prev-page="prevPage"
+          @next-page="nextPage"
+          @view="openDetailDialog"
+          @edit="openEditDialog"
+          @delete="deleteQuestion"
+        />
       </div>
     </div>
 
-    <div v-if="errorMessage" class="rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
-      {{ errorMessage }}
-    </div>
-
-    <QuestionTable
-      :questions="displayQuestions"
-      :pagination="pagination"
-      :is-loading="isLoading"
-      @prev-page="prevPage"
-      @next-page="nextPage"
-      @view="openDetailDialog"
-      @edit="openEditDialog"
-      @delete="deleteQuestion"
-    />
-
+    <!-- Modals -->
     <QuestionFormDialog
       :open="isDialogOpen"
       :is-editing="isEditing"

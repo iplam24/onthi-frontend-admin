@@ -98,86 +98,106 @@ onMounted(loadLevels)
 </script>
 
 <template>
-  <div class="space-y-6">
-    <section class="rounded-2xl border border-border bg-card p-6 shadow-sm">
-      <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-          <p class="text-sm font-medium uppercase tracking-[0.25em] text-muted-foreground">Học liệu</p>
-          <h1 class="mt-2 text-3xl font-bold text-foreground">Quản lý Cấp độ</h1>
-          <p class="mt-2 text-muted-foreground">Dữ liệu đồng bộ từ API thật `/api/learning/levels`.</p>
+  <div class="app-page">
+    <div class="space-y-8">
+      <!-- Header Section -->
+      <section class="app-surface p-8 shadow-2xl">
+        <div class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <div class="app-kicker">Học liệu & Hệ thống</div>
+            <h1 class="mt-3 text-4xl font-extrabold tracking-tight text-foreground">Quản lý Cấp độ</h1>
+            <p class="mt-2 text-muted-foreground font-medium">Quản lý các khối lớp và cấp học trong hệ thống.</p>
+          </div>
+
+          <button class="app-btn-primary group" @click="openCreateDialog">
+            <Plus class="h-5 w-5 transition-transform group-hover:rotate-90" />
+            Thêm cấp độ mới
+          </button>
         </div>
 
-        <button class="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90" @click="openCreateDialog">
-          <Plus class="h-4 w-4" />
-          Thêm cấp độ
-        </button>
+        <div class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div class="app-surface !bg-white/40 dark:!bg-white/5 p-5 shadow-sm">
+            <p class="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Tổng số cấp độ</p>
+            <div class="mt-2 flex items-baseline gap-2">
+              <p class="text-3xl font-black text-primary">{{ totalLevels }}</p>
+              <p class="text-xs font-bold text-muted-foreground">khối lớp</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Main Content -->
+      <div v-if="errorMessage" class="app-surface !bg-destructive/10 border-destructive/20 p-4 text-sm text-destructive font-bold flex items-center gap-3">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        {{ errorMessage }}
       </div>
 
-      <div class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <div class="rounded-xl border border-border bg-background p-4">
-          <p class="text-sm text-muted-foreground">Tổng cấp độ</p>
-          <p class="mt-2 text-2xl font-bold text-foreground">{{ totalLevels }}</p>
+      <div class="app-surface shadow-xl">
+        <div class="border-b border-border/50 px-8 py-6 flex items-center justify-between bg-white/30 dark:bg-black/20">
+          <h2 class="text-xl font-bold text-foreground">Danh sách cấp độ</h2>
+          <div class="h-2 w-2 rounded-full bg-primary animate-pulse"></div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead>
+              <tr class="text-left text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 border-b border-border/40">
+                <th class="px-8 py-4">Tên cấp độ</th>
+                <th class="px-8 py-4 text-right">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-border/40">
+              <tr v-if="!levels.length && !isLoading">
+                <td colspan="2" class="px-8 py-16 text-center">
+                  <div class="flex flex-col items-center gap-2">
+                    <div class="h-12 w-12 rounded-full bg-muted/30 flex items-center justify-center">
+                      <RefreshCw class="h-6 w-6 text-muted-foreground/40" />
+                    </div>
+                    <p class="text-sm font-bold text-muted-foreground">Chưa có cấp độ nào được tạo</p>
+                  </div>
+                </td>
+              </tr>
+              <tr v-if="isLoading">
+                 <td colspan="2" class="px-8 py-16 text-center">
+                    <RefreshCw class="h-8 w-8 animate-spin mx-auto text-primary" />
+                 </td>
+              </tr>
+              <tr v-for="(level, index) in levels" :key="level.id" 
+                  class="group transition-colors hover:bg-primary/5"
+                  :class="[index % 2 === 0 ? 'stagger-1' : 'stagger-2']">
+                <td class="px-8 py-5">
+                  <span class="text-sm font-bold text-foreground group-hover:text-primary transition-colors">{{ level.name }}</span>
+                </td>
+                <td class="px-8 py-5">
+                  <div class="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button class="flex h-9 w-9 items-center justify-center rounded-xl border border-border/50 bg-white shadow-sm transition-all hover:-translate-y-1 hover:border-primary/50 hover:text-primary dark:bg-white/5" @click="openEditDialog(level)">
+                      <Pencil class="h-4 w-4" />
+                    </button>
+                    <button class="flex h-9 w-9 items-center justify-center rounded-xl border border-destructive/20 bg-destructive/5 text-destructive shadow-sm transition-all hover:-translate-y-1 hover:bg-destructive/10" @click="deleteLevel(level)">
+                      <Trash2 class="h-4 w-4" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
-    </section>
-
-    <div v-if="errorMessage" class="rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
-      {{ errorMessage }}
     </div>
 
-    <div class="rounded-2xl border border-border bg-card shadow-sm">
-      <div class="border-b border-border px-6 py-4">
-        <h2 class="text-xl font-semibold text-foreground">Danh sách cấp độ</h2>
-      </div>
-
-      <div class="overflow-x-auto">
-        <table class="min-w-full">
-          <thead>
-            <tr class="border-b border-border bg-muted/40 text-left text-sm uppercase tracking-wide text-muted-foreground">
-              <th class="px-6 py-3 font-semibold">Tên cấp độ</th>
-              <th class="px-6 py-3 font-semibold">Thao tác</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-if="!levels.length">
-              <td colspan="2" class="px-6 py-10 text-center text-sm text-muted-foreground">
-                Chưa có cấp độ nào.
-              </td>
-            </tr>
-            <tr v-for="level in levels" :key="level.id" class="border-b border-border last:border-b-0 hover:bg-muted/30">
-              <td class="px-6 py-4 text-sm text-foreground">{{ level.name }}</td>
-              <td class="px-6 py-4">
-                <div class="flex gap-2">
-                  <button class="inline-flex items-center gap-1 rounded-md border border-border px-3 py-2 text-sm font-medium hover:bg-muted" @click="openEditDialog(level)">
-                    <Pencil class="h-4 w-4" />
-                    Sửa
-                  </button>
-                  <button class="inline-flex items-center gap-1 rounded-md border border-destructive/30 px-3 py-2 text-sm font-medium text-destructive hover:bg-destructive/10" @click="deleteLevel(level)">
-                    <Trash2 class="h-4 w-4" />
-                    Xóa
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <BaseDialog :open="isDialogOpen" :title="isEditing ? 'Sửa cấp độ' : 'Thêm cấp độ'" description="Cấp độ chỉ gồm tên, theo đúng document." size="md" @close="closeDialog">
-      <div class="space-y-4">
-        <div class="space-y-2">
-          <label class="text-sm font-medium text-foreground" for="level-name">Tên cấp độ</label>
-          <input id="level-name" v-model="formState.name" type="text" class="w-full rounded-md border border-input bg-background px-3 py-2 text-foreground" placeholder="VD: Lớp 10" />
+    <!-- Modals -->
+    <BaseDialog :open="isDialogOpen" :title="isEditing ? 'Sửa cấp độ' : 'Thêm cấp độ'" description="Nhập tên khối lớp hoặc cấp học mới." size="md" @close="closeDialog">
+      <div class="space-y-6 pt-4">
+        <div class="space-y-3">
+          <label class="text-xs font-black uppercase tracking-widest text-muted-foreground" for="level-name">Tên cấp độ</label>
+          <input id="level-name" v-model="formState.name" type="text" class="app-input" placeholder="VD: Lớp 10, Lớp 11..." />
         </div>
 
-        <p v-if="errorMessage" class="text-sm text-destructive">{{ errorMessage }}</p>
-
-        <div class="flex items-center justify-end gap-3">
-          <button class="rounded-md border border-border px-4 py-2 text-sm font-medium hover:bg-muted" @click="closeDialog">Hủy</button>
-          <button class="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50" :disabled="isSaving" @click="saveLevel">
+        <div class="flex items-center justify-end gap-3 pt-4">
+          <button class="app-btn-secondary !px-8" @click="closeDialog">Hủy</button>
+          <button class="app-btn-primary !px-10" :disabled="isSaving" @click="saveLevel">
             <RefreshCw v-if="isSaving" class="h-4 w-4 animate-spin" />
-            Lưu
+            Lưu cấp độ
           </button>
         </div>
       </div>

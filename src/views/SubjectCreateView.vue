@@ -128,87 +128,98 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="space-y-6">
-    <div class="flex items-center gap-4">
-      <RouterLink to="/subjects" class="rounded-md border border-border p-2 hover:bg-muted">
-        <ArrowLeft class="h-5 w-5" />
-      </RouterLink>
-      <div>
-        <h1 class="text-2xl font-bold">{{ isEditing ? 'Chỉnh sửa Môn học' : 'Tạo mới Môn học' }}</h1>
-        <p class="text-muted-foreground">
-          {{ isEditing ? 'Cập nhật thông tin chi tiết của môn học.' : 'Thêm một môn học mới vào hệ thống.' }}
-        </p>
-      </div>
-    </div>
-
-    <div class="rounded-2xl border border-border bg-card p-6 shadow-sm">
-      <form @submit.prevent="saveSubject" class="space-y-6">
-        <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
-          <div class="space-y-2 md:col-span-2">
-            <label for="subject-name" class="text-sm font-medium">Tên môn học</label>
-            <input
-              id="subject-name"
-              v-model="formState.name"
-              type="text"
-              placeholder="Ví dụ: Lập trình Web nâng cao"
-              class="w-full rounded-md border border-input bg-background px-3 py-2"
-              :disabled="isLoading"
-            />
-          </div>
-
-          <div class="space-y-2">
-            <label for="subject-level" class="text-sm font-medium">Level</label>
-            <select
-              id="subject-level"
-              v-model="formState.levelId"
-              class="w-full rounded-md border border-input bg-background px-3 py-2"
-              :disabled="isLoading || !levels.length"
-            >
-              <option value="" disabled>Chọn level</option>
-              <option v-for="level in levels" :key="level.id" :value="level.id">
-                {{ level.name }}
-              </option>
-            </select>
+  <div class="app-page">
+    <div class="space-y-8">
+      <!-- Header Section -->
+      <section class="app-surface p-8 shadow-2xl">
+        <div class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+          <div class="flex items-center gap-6">
+            <button class="flex h-12 w-12 items-center justify-center rounded-2xl border border-border/50 bg-white shadow-sm transition-all hover:-translate-x-1 hover:bg-primary/5 dark:bg-white/5" @click="router.push('/subjects')">
+              <ArrowLeft class="h-6 w-6" />
+            </button>
+            <div>
+              <div class="app-kicker">Học liệu & Hệ thống</div>
+              <h1 class="mt-1 text-3xl font-extrabold tracking-tight text-foreground">{{ isEditing ? 'Chỉnh sửa Môn học' : 'Tạo môn học mới' }}</h1>
+              <p class="mt-1 text-muted-foreground font-medium">{{ isEditing ? 'Cập nhật thông tin chi tiết của môn học.' : 'Thêm một môn học mới vào hệ thống quản lý.' }}</p>
+            </div>
           </div>
         </div>
+      </section>
 
-        <div class="space-y-2">
-          <label class="text-sm font-medium">Hình ảnh môn học</label>
-          <div class="flex items-center gap-4">
-            <div class="h-24 w-24 flex-shrink-0 rounded-md border border-dashed border-input">
-              <img v-if="imagePreviewUrl" :src="imagePreviewUrl" alt="Xem trước" class="h-full w-full rounded-md object-cover" />
-              <div v-else class="flex h-full w-full items-center justify-center bg-muted/50">
-                <UploadCloud class="h-8 w-8 text-muted-foreground" />
+      <!-- Main Form -->
+      <div class="app-surface shadow-xl p-8 max-w-4xl">
+        <form @submit.prevent="saveSubject" class="space-y-10">
+          <div class="grid gap-8 md:grid-cols-2">
+            <div class="space-y-3 md:col-span-2">
+              <label for="subject-name" class="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70">Tên môn học</label>
+              <input
+                id="subject-name"
+                v-model="formState.name"
+                type="text"
+                placeholder="Ví dụ: Toán học, Ngữ văn..."
+                class="app-input !text-lg !font-bold"
+                :disabled="isLoading"
+              />
+            </div>
+
+            <div class="space-y-3">
+              <label for="subject-level" class="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70">Cấp độ (Level)</label>
+              <select
+                id="subject-level"
+                v-model="formState.levelId"
+                class="app-select"
+                :disabled="isLoading || !levels.length"
+              >
+                <option value="" disabled>-- Chọn cấp độ --</option>
+                <option v-for="level in levels" :key="level.id" :value="level.id">
+                  {{ level.name }}
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <div class="space-y-4">
+            <label class="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70">Ảnh đại diện môn học</label>
+            <div class="flex flex-wrap items-center gap-8">
+              <div class="relative h-32 w-32 shrink-0 overflow-hidden rounded-[2rem] border-2 border-dashed border-border/50 bg-muted/20 group">
+                <img v-if="imagePreviewUrl" :src="imagePreviewUrl" alt="Xem trước" class="h-full w-full object-cover transition-transform group-hover:scale-110" />
+                <div v-else class="flex h-full w-full flex-col items-center justify-center gap-2 text-muted-foreground">
+                  <UploadCloud class="h-8 w-8 opacity-40" />
+                  <span class="text-[10px] font-bold">Trống</span>
+                </div>
+              </div>
+              
+              <div class="space-y-3">
+                <label for="file-upload" class="app-btn-secondary cursor-pointer inline-flex !py-2.5">
+                  <UploadCloud class="h-4 w-4 mr-2" />
+                  Chọn tệp tin ảnh
+                </label>
+                <input id="file-upload" type="file" class="sr-only" accept="image/*" @change="handleFileSelect" />
+                <p class="text-xs font-medium text-muted-foreground">Hỗ trợ PNG, JPG, GIF. Dung lượng tối đa 10MB.</p>
               </div>
             </div>
-            <div class="space-y-2">
-              <label for="file-upload" class="cursor-pointer rounded-md bg-secondary px-3 py-2 text-sm font-medium text-secondary-foreground hover:bg-secondary/80">
-                Chọn ảnh
-              </label>
-              <input id="file-upload" type="file" class="sr-only" accept="image/*" @change="handleFileSelect" />
-              <p class="text-xs text-muted-foreground">PNG, JPG, GIF tối đa 10MB.</p>
-            </div>
           </div>
-        </div>
 
-        <div v-if="errorMessage" class="rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
-          {{ errorMessage }}
-        </div>
+          <div v-if="errorMessage" class="app-surface !bg-destructive/10 border-destructive/20 p-4 text-sm text-destructive font-bold flex items-center gap-3">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            {{ errorMessage }}
+          </div>
 
-        <div class="flex justify-end gap-3">
-          <RouterLink to="/subjects" class="rounded-md border border-border px-4 py-2 text-sm font-medium hover:bg-muted">
-            Hủy
-          </RouterLink>
-          <button
-            type="submit"
-            class="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-            :disabled="isSaving || isUploading"
-          >
-            <RefreshCw v-if="isSaving || isUploading" class="h-4 w-4 animate-spin" />
-            {{ isEditing ? 'Lưu thay đổi' : 'Tạo môn học' }}
-          </button>
-        </div>
-      </form>
+          <div class="flex items-center justify-end gap-4 border-t border-border/50 pt-8">
+            <button type="button" class="app-btn-secondary !px-8" @click="router.push('/subjects')">
+              Hủy bỏ
+            </button>
+            <button
+              type="submit"
+              class="app-btn-primary !px-12 group"
+              :disabled="isSaving || isUploading"
+            >
+              <RefreshCw v-if="isSaving || isUploading" class="h-4 w-4 animate-spin" />
+              {{ isEditing ? 'Lưu thay đổi' : 'Khởi tạo môn học' }}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   </div>
 </template>
