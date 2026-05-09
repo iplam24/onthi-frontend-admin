@@ -5,6 +5,8 @@ import { filesAPI, levelsAPI, questionsAPI, subjectsAPI, topicsAPI } from '@/ser
 import QuestionTable from '@/components/questions/QuestionTable.vue'
 import QuestionFormDialog from '@/components/questions/QuestionFormDialog.vue'
 import QuestionDetailDialog from '@/components/questions/QuestionDetailDialog.vue'
+import AiGenerateQuestionsDialog from '@/components/questions/AiGenerateQuestionsDialog.vue'
+import { Sparkles } from 'lucide-vue-next'
 import { API_CONFIG } from '@/constants'
 import { normalizeCollection, normalizeLevel, normalizeSubject, normalizeTopic, normalizeQuestion } from '@/utils/normalizers'
 
@@ -17,6 +19,7 @@ const isSaving = ref(false)
 const errorMessage = ref('')
 const isDialogOpen = ref(false)
 const isDetailOpen = ref(false)
+const isAiGenerateOpen = ref(false)
 const isEditing = ref(false)
 const editId = ref(null)
 const selectedQuestion = ref(null)
@@ -287,10 +290,16 @@ onMounted(loadData)
             <p class="mt-2 text-muted-foreground font-medium">Kho lưu trữ câu hỏi trắc nghiệm và tự luận được phân loại chi tiết.</p>
           </div>
 
-          <button class="app-btn-primary group" @click="openCreateDialog">
-            <Plus class="h-5 w-5 transition-transform group-hover:rotate-90" />
-            Thêm câu hỏi mới
-          </button>
+          <div class="flex items-center gap-3">
+            <button class="app-btn-secondary group border-indigo-200 text-indigo-700 hover:bg-indigo-50" @click="isAiGenerateOpen = true">
+              <Sparkles class="h-5 w-5 text-indigo-600 group-hover:scale-110 transition-transform" />
+              Tạo bằng AI
+            </button>
+            <button class="app-btn-primary group" @click="openCreateDialog">
+              <Plus class="h-5 w-5 transition-transform group-hover:rotate-90" />
+              Thêm câu hỏi mới
+            </button>
+          </div>
         </div>
 
         <div class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 relative z-10">
@@ -394,6 +403,13 @@ onMounted(loadData)
       :open="isDetailOpen"
       :question="selectedQuestion"
       @close="closeDetailDialog"
+    />
+
+    <AiGenerateQuestionsDialog
+      :open="isAiGenerateOpen"
+      :topics="topics"
+      @close="isAiGenerateOpen = false"
+      @generated="loadData"
     />
   </div>
 </template>

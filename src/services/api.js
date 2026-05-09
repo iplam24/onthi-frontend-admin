@@ -51,7 +51,12 @@ export const examsAPI = {
   },
 }
 
-export const questionsAPI = createCrudApi('/questions')
+export const questionsAPI = {
+  ...createCrudApi('/questions'),
+  createBatch(data) {
+    return apiClient.post('/questions/batch', data)
+  }
+}
 
 export const countdownsAPI = createCrudApi('/countdowns')
 
@@ -69,6 +74,12 @@ export const authAPI = {
 export const statisticsAPI = {
   getDashboardStats() {
     return apiClient.get('/statistics/dashboard')
+  }
+}
+
+export const aiAPI = {
+  generateQuestions(data) {
+    return apiClient.post('/ai-content/generate-questions', data)
   }
 }
 
