@@ -3,7 +3,7 @@ import { onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, RefreshCw, UploadCloud } from 'lucide-vue-next'
 import { filesAPI, levelsAPI, subjectsAPI } from '@/services/api'
-import { resolveMediaUrl } from '@/utils/url'
+import { resolveBackendUrl } from '@/utils/url'
 
 const route = useRoute()
 const router = useRouter()
@@ -70,7 +70,7 @@ async function loadSubjectForEdit() {
     formState.imageUrl = subject.imageUrl || ''
     formState.levelId = subject.levelId || ''
     if (subject.imageUrl) {
-      imagePreviewUrl.value = resolveMediaUrl(subject.imageUrl)
+      imagePreviewUrl.value = resolveBackendUrl(subject.imageUrl)
     }
   } catch (error) {
     errorMessage.value = 'Không tải được dữ liệu môn học.'

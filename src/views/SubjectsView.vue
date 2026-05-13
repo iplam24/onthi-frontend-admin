@@ -3,7 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { Pencil, Plus, RefreshCw, Trash2 } from 'lucide-vue-next'
 import { levelsAPI, subjectsAPI } from '@/services/api'
-import { resolveMediaUrl } from '@/utils/url'
+import { resolveBackendUrl } from '@/utils/url'
 import { normalizeCollection, normalizeLevel, normalizeSubject } from '@/utils/normalizers'
 
 const router = useRouter()
@@ -17,7 +17,7 @@ const totalSubjects = computed(() => subjects.value.length)
 const displaySubjects = computed(() =>
   subjects.value.map(subject => ({
     ...subject,
-    imageUrl: resolveMediaUrl(subject.imageUrl)
+    imageUrl: resolveBackendUrl(subject.imageUrl)
   }))
 )
 async function loadData() {
