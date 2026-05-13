@@ -71,6 +71,12 @@ const router = createRouter({
       name: 'Countdowns',
       component: () => import('../views/CountdownsView.vue'),
       meta: { requiresAuth: true }
+    },
+    {
+      path: '/users',
+      name: 'Users',
+      component: () => import('../views/UsersView.vue'),
+      meta: { requiresAuth: true }
     }
   ]
 })

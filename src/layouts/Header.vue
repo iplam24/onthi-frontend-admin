@@ -1,6 +1,6 @@
 <template>
-  <header class="sticky top-4 z-40 w-full px-4 lg:px-10">
-    <div class="app-surface mx-auto flex h-16 max-w-7xl items-center justify-between px-6 py-2 shadow-lg">
+  <header class="w-full px-6 py-4">
+    <div class="app-surface !overflow-visible mx-auto flex h-16 max-w-[1400px] items-center justify-between px-6 py-2 shadow-xl border-white/20 dark:border-white/5">
       <div class="flex items-center gap-4">
         <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-violet-600 text-white shadow-md">
           <span class="text-lg font-black italic">V</span>

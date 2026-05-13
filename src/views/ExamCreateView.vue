@@ -329,63 +329,64 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="space-y-6">
-    <section class="overflow-hidden rounded-[1.75rem] border border-border/70 bg-card/85 p-4 shadow-[0_18px_50px_-28px_rgba(15,23,42,0.35)] backdrop-blur-xl sm:p-6">
-      <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-          <div class="inline-flex items-center rounded-full border border-primary/15 bg-primary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-primary">
-            Học liệu · Đề thi
+  <div class="app-page">
+    <div class="space-y-8">
+      <section class="app-surface p-8 shadow-2xl overflow-hidden relative group">
+        <div class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between relative z-10">
+          <div>
+            <div class="app-kicker">Học liệu · Đề thi</div>
+            <h1 class="mt-3 text-4xl font-black tracking-tight text-foreground">Thêm đề thi</h1>
+            <p class="mt-2 max-w-2xl text-muted-foreground font-medium">
+              Tạo đề thi mới theo đúng môn học, chọn câu hỏi và cấu hình đề trên một trang riêng.
+            </p>
           </div>
-          <h1 class="mt-3 text-3xl font-black tracking-tight text-foreground sm:text-4xl">Thêm đề thi</h1>
-          <p class="mt-2 max-w-2xl text-sm text-muted-foreground">
-            Tạo đề thi mới theo đúng môn học, chọn câu hỏi và cấu hình đề trên một trang riêng.
-          </p>
+
+          <button
+            class="app-btn-secondary group"
+            @click="goBack"
+          >
+            <ArrowLeft class="h-4 w-4 transition-transform group-hover:-translate-x-1" />
+            Quay lại danh sách
+          </button>
         </div>
+        <div class="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-primary/10 blur-[80px]"></div>
+      </section>
 
-        <button
-          class="inline-flex items-center gap-2 rounded-full border border-border/80 bg-background px-4 py-2.5 text-sm font-medium text-foreground shadow-sm transition hover:-translate-y-0.5 hover:bg-muted"
-          @click="goBack"
-        >
-          <ArrowLeft class="h-4 w-4" />
-          Quay lại danh sách
-        </button>
-      </div>
-    </section>
-
-    <section class="rounded-[1.75rem] border border-border/70 bg-card/85 p-4 shadow-[0_18px_50px_-28px_rgba(15,23,42,0.35)] backdrop-blur-xl sm:p-6">
-      <ExamFormWorkspace
-        :subjects="subjects"
-        :exam-type-options="examTypeOptions"
-        :form-state="formState"
-        :selected-question-count="selectedQuestionCount"
-        :selected-question-total-score="selectedQuestionTotalScore"
-        :is-saving="isSaving"
-        :is-question-pool-loading="isQuestionPoolLoading"
-        :question-pool-error="questionPoolError"
-        :error-message="errorMessage"
-        :filtered-question-pool="filteredQuestionPool"
-        :selected-questions-sorted="selectedQuestionsSorted"
-        :question-search="questionSearch"
-        :get-subject-name="getSubjectName"
-        :get-topic-label="getTopicLabel"
-        :get-question-subject-label="getQuestionSubjectLabel"
-        :get-type-label="getTypeLabel"
-        :get-difficulty-label="getDifficultyLabel"
-        :is-question-selected="isQuestionSelected"
-        :exam-layout-hints="EXAM_LAYOUT_HINTS"
-        submit-text="Tạo đề thi"
-        cancel-text="Quay lại"
-        @cancel="goBack"
-        @submit="handleSubmitExam"
-        @subject-change="handleSubjectChangeInForm"
-        @refresh-question-pool="loadQuestionPool(formState.subjectId)"
-        @select-all-visible="selectAllVisibleQuestions"
-        @clear-selected-questions="clearSelectedQuestions"
-        @toggle-question="toggleQuestionSelection"
-        @remove-question="removeQuestionFromSelection"
-        @update:questionSearch="questionSearch = $event"
-      />
-    </section>
+      <section class="app-surface shadow-xl p-0 overflow-hidden">
+        <ExamFormWorkspace
+          :subjects="subjects"
+          :exam-type-options="examTypeOptions"
+          :form-state="formState"
+          :selected-question-count="selectedQuestionCount"
+          :selected-question-total-score="selectedQuestionTotalScore"
+          :is-saving="isSaving"
+          :is-question-pool-loading="isQuestionPoolLoading"
+          :question-pool-error="questionPoolError"
+          :error-message="errorMessage"
+          :filtered-question-pool="filteredQuestionPool"
+          :selected-questions-sorted="selectedQuestionsSorted"
+          :question-search="questionSearch"
+          :get-subject-name="getSubjectName"
+          :get-topic-label="getTopicLabel"
+          :get-question-subject-label="getQuestionSubjectLabel"
+          :get-type-label="getTypeLabel"
+          :get-difficulty-label="getDifficultyLabel"
+          :is-question-selected="isQuestionSelected"
+          :exam-layout-hints="EXAM_LAYOUT_HINTS"
+          submit-text="Tạo đề thi"
+          cancel-text="Quay lại"
+          @cancel="goBack"
+          @submit="handleSubmitExam"
+          @subject-change="handleSubjectChangeInForm"
+          @refresh-question-pool="loadQuestionPool(formState.subjectId)"
+          @select-all-visible="selectAllVisibleQuestions"
+          @clear-selected-questions="clearSelectedQuestions"
+          @toggle-question="toggleQuestionSelection"
+          @remove-question="removeQuestionFromSelection"
+          @update:questionSearch="questionSearch = $event"
+        />
+      </section>
+    </div>
   </div>
 </template>
 

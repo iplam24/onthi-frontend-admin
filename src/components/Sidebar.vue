@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
-import { ChevronDown, LayoutDashboard, BookOpenText, Layers3, HelpCircle, ClipboardList, TimerReset } from 'lucide-vue-next'
+import { ChevronDown, LayoutDashboard, BookOpenText, Layers3, HelpCircle, ClipboardList, TimerReset, Users } from 'lucide-vue-next'
 
 const route = useRoute()
 const isLearningOpen = ref(true)
@@ -30,6 +30,12 @@ const navItems = [
 	description: 'Đếm ngày tới kỳ thi',
 	to: '/countdowns',
 	icon: TimerReset
+  },
+  {
+    label: 'Người dùng',
+    description: 'Quản lý tài khoản & số dư',
+    to: '/users',
+    icon: Users
   }
 ]
 
@@ -68,8 +74,8 @@ if (isLearningRoute.value) {
 </script>
 
 <template>
-  <aside class="relative z-30 lg:sticky lg:top-20 lg:h-[calc(100vh-6rem)] lg:w-85 p-4 lg:p-6">
-    <div class="app-surface h-full flex flex-col border-white/30 dark:border-white/10 shadow-2xl">
+  <aside class="flex flex-col">
+    <div class="h-full flex flex-col">
       <!-- Admin Branding -->
       <div class="px-6 py-8">
         <div class="flex items-center gap-3">
@@ -92,7 +98,7 @@ if (isLearningRoute.value) {
             :to="item.to"
             class="group relative flex items-center gap-4 rounded-2xl px-4 py-3.5 transition-all duration-300 hover:bg-white/50 dark:hover:bg-white/5"
             :class="[index % 2 === 0 ? 'stagger-1' : 'stagger-2']"
-            active-class="bg-primary shadow-lg shadow-primary/25 !text-white"
+            active-class="bg-primary shadow-lg shadow-primary/40 !text-white"
           >
             <component :is="item.icon" class="h-5 w-5 shrink-0 transition-transform group-hover:scale-110" />
             <div class="min-w-0">
@@ -103,7 +109,7 @@ if (isLearningRoute.value) {
               </p>
             </div>
             <!-- Active Indicator Pill -->
-            <div v-if="route.path === item.to" class="absolute left-0 h-6 w-1 rounded-r-full bg-white"></div>
+            <div v-if="route.path === item.to" class="absolute left-0 h-6 w-1.5 rounded-r-full bg-white shadow-[0_0_10px_rgba(255,255,255,0.8)]"></div>
           </RouterLink>
         </div>
 

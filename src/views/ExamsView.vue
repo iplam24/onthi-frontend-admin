@@ -1,7 +1,8 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { examsAPI, questionsAPI, subjectsAPI, topicsAPI } from '@/services/api'
+import { examsAPI, questionsAPI } from '@/services/api'
+import { useMetadataStore } from '@/stores/metadataStore'
 import ExamPageHeader from '@/components/exams/ExamPageHeader.vue'
 import ExamFiltersPanel from '@/components/exams/ExamFiltersPanel.vue'
 import ExamTable from '@/components/exams/ExamTable.vue'
@@ -10,10 +11,9 @@ import ExamDetailDialog from '@/components/exams/ExamDetailDialog.vue'
 import { normalizeCollection, normalizeSubject, normalizeTopic, normalizeQuestion, normalizeExam, normalizeExamQuestion } from '@/utils/normalizers'
 import { EXAM_LAYOUT_HINTS } from '@/constants'
 
+const metadataStore = useMetadataStore()
 const exams = ref([])
 const router = useRouter()
-const subjects = ref([])
-const topics = ref([])
 const questionPool = ref([])
 const isLoading = ref(false)
 const isSaving = ref(false)
@@ -83,13 +83,13 @@ function enrichQuestion(question) {
 
 
 function getSubjectName(subjectId, fallbackName = '') {
-  const subject = subjects.value.find(item => String(item.id) === String(subjectId))
+  const subject = metadataStore.subjects.find(item => String(item.id) === String(subjectId))
   if (subject) return getSubjectDisplayLabel(subject)
   return fallbackName || '—'
 }
 
 function getTopicMeta(topicId) {
-  return topics.value.find(topic => String(topic.id) === String(topicId)) || null
+  return metadataStore.topics.find(topic => String(topic.id) === String(topicId)) || null
 }
 
 function getTopicLabel(question) {
@@ -273,14 +273,7 @@ async function loadData() {
       ? examsAPI.getBySubject(filters.subjectId, queryParams)
       : examsAPI.getAll(queryParams)
 
-    const [subjectsResponse, topicsResponse, examsResponse] = await Promise.all([
-      subjectsAPI.getAll(),
-      topicsAPI.getAll(),
-      examRequest
-    ])
-
-    subjects.value = normalizeCollection(subjectsResponse.data).map(normalizeSubject)
-    topics.value = normalizeCollection(topicsResponse.data).map(normalizeTopic)
+    const examsResponse = await examRequest
 
     const examPage = examsResponse.data?.data ?? examsResponse.data ?? {}
     exams.value = normalizeCollection(examPage).map(normalizeExam)
@@ -569,7 +562,7 @@ onMounted(loadData)
         <div class="lg:col-span-12">
           <ExamFiltersPanel
             v-model:subjectId="filters.subjectId"
-            :subjects="subjects"
+            :subjects="metadataStore.subjects"
             :get-subject-name="getSubjectName"
             @change="onSubjectFilterChange"
           />
@@ -604,7 +597,7 @@ onMounted(loadData)
       <ExamFormDialog
         :open="isDialogOpen"
         :is-editing="isEditing"
-        :subjects="subjects"
+        :subjects="metadataStore.subjects"
         :exam-type-options="examTypeOptions"
         :exam-layout-hints="EXAM_LAYOUT_HINTS"
         :form-state="formState"

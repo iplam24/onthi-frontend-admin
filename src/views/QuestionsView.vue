@@ -1,25 +1,26 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
 import { Plus } from 'lucide-vue-next'
-import { filesAPI, levelsAPI, questionsAPI, subjectsAPI, topicsAPI } from '@/services/api'
+import { filesAPI, questionsAPI } from '@/services/api'
+import { useMetadataStore } from '@/stores/metadataStore'
 import QuestionTable from '@/components/questions/QuestionTable.vue'
 import QuestionFormDialog from '@/components/questions/QuestionFormDialog.vue'
 import QuestionDetailDialog from '@/components/questions/QuestionDetailDialog.vue'
 import AiGenerateQuestionsDialog from '@/components/questions/AiGenerateQuestionsDialog.vue'
-import { Sparkles } from 'lucide-vue-next'
+import ImportExcelDialog from '@/components/questions/ImportExcelDialog.vue'
+import { Sparkles, FileSpreadsheet } from 'lucide-vue-next'
 import { API_CONFIG } from '@/constants'
 import { normalizeCollection, normalizeLevel, normalizeSubject, normalizeTopic, normalizeQuestion } from '@/utils/normalizers'
 
+const metadataStore = useMetadataStore()
 const questions = ref([])
-const levels = ref([])
-const subjects = ref([])
-const topics = ref([])
 const isLoading = ref(false)
 const isSaving = ref(false)
 const errorMessage = ref('')
 const isDialogOpen = ref(false)
 const isDetailOpen = ref(false)
 const isAiGenerateOpen = ref(false)
+const isImportExcelOpen = ref(false)
 const isEditing = ref(false)
 const editId = ref(null)
 const selectedQuestion = ref(null)
@@ -44,30 +45,27 @@ function resolveMediaUrl(url) {
   if (!url) return ''
   if (/^https?:\/\//i.test(url)) return url
 
-  const normalizedPath = String(url).startsWith('/') ? String(url) : `/${url}`
   const apiBase = API_CONFIG.BASE_URL || ''
-
-  if (/^https?:\/\//i.test(apiBase)) {
-    return `${new URL(apiBase).origin}${normalizedPath}`
+  let origin = apiBase
+  
+  if (apiBase.includes('/api')) {
+    origin = apiBase.split('/api')[0]
   }
 
-  if (typeof window !== 'undefined') {
-    return `${window.location.origin}${normalizedPath}`
-  }
-
-  return normalizedPath
+  const normalizedPath = String(url).startsWith('/') ? String(url) : `/${url}`
+  return `${origin}${normalizedPath}`
 }
 
 function getTopicName(topicId, fallbackName) {
-  return topics.value.find(topic => String(topic.id) === String(topicId))?.name || fallbackName || '—'
+  return metadataStore.getTopicName(topicId, fallbackName)
 }
 
 function getTopicMeta(topicId) {
-  return topics.value.find(topic => String(topic.id) === String(topicId)) || null
+  return metadataStore.getTopicMeta(topicId)
 }
 
 function getSubjectDisplayLabel(subject) {
-  const levelLabel = subject.levelName || levels.value.find(level => String(level.id) === String(subject.levelId))?.name || ''
+  const levelLabel = subject.levelName || metadataStore.levels.find(level => String(level.id) === String(subject.levelId))?.name || ''
   return levelLabel ? `${subject.name} - ${levelLabel}` : subject.name
 }
 
@@ -95,8 +93,8 @@ const displayQuestions = computed(() =>
 )
 
 const filteredTopicOptions = computed(() => {
-  if (!filters.subjectId) return topics.value
-  return topics.value.filter(topic => String(topic.subjectId) === String(filters.subjectId))
+  if (!filters.subjectId) return metadataStore.topics
+  return metadataStore.topics.filter(topic => String(topic.subjectId) === String(filters.subjectId))
 })
 
 function resetPageAndReload() {
@@ -126,16 +124,7 @@ async function loadData() {
       ...(filters.topicId ? { topicId: Number(filters.topicId) || filters.topicId } : {})
     }
 
-    const [levelsResponse, subjectsResponse, topicsResponse, questionsResponse] = await Promise.all([
-      levelsAPI.getAll(),
-      subjectsAPI.getAll(),
-      topicsAPI.getAll(),
-      questionsAPI.getAll(queryParams)
-    ])
-
-    levels.value = normalizeCollection(levelsResponse.data).map(normalizeLevel)
-    subjects.value = normalizeCollection(subjectsResponse.data).map(normalizeSubject)
-    topics.value = normalizeCollection(topicsResponse.data).map(normalizeTopic)
+    const questionsResponse = await questionsAPI.getAll(queryParams)
 
     const questionPage = questionsResponse.data?.data ?? questionsResponse.data ?? {}
     questions.value = normalizeCollection(questionPage).map(normalizeQuestion)
@@ -291,6 +280,10 @@ onMounted(loadData)
           </div>
 
           <div class="flex items-center gap-3">
+            <button class="app-btn-secondary group border-green-200 text-green-700 hover:bg-green-50" @click="isImportExcelOpen = true">
+              <FileSpreadsheet class="h-5 w-5 text-green-600 group-hover:scale-110 transition-transform" />
+              Nhập Excel
+            </button>
             <button class="app-btn-secondary group border-indigo-200 text-indigo-700 hover:bg-indigo-50" @click="isAiGenerateOpen = true">
               <Sparkles class="h-5 w-5 text-indigo-600 group-hover:scale-110 transition-transform" />
               Tạo bằng AI
@@ -333,7 +326,7 @@ onMounted(loadData)
               @change="onSubjectFilterChange"
             >
               <option value="">Tất cả môn học</option>
-              <option v-for="subject in subjects" :key="subject.id" :value="subject.id">
+              <option v-for="subject in metadataStore.subjects" :key="subject.id" :value="subject.id">
                 {{ getSubjectDisplayLabel(subject) }}
               </option>
             </select>
@@ -363,26 +356,16 @@ onMounted(loadData)
         {{ errorMessage }}
       </div>
 
-      <div class="app-surface shadow-xl">
-        <div class="border-b border-border/50 px-8 py-6 flex items-center justify-between bg-white/30 dark:bg-black/20">
-          <h2 class="text-xl font-bold text-foreground">Danh sách câu hỏi</h2>
-          <div class="flex items-center gap-2">
-            <div class="h-2 w-2 rounded-full bg-primary animate-pulse"></div>
-            <span class="text-xs font-bold text-muted-foreground uppercase tracking-widest">Live Data</span>
-          </div>
-        </div>
-
-        <QuestionTable
-          :questions="displayQuestions"
-          :pagination="pagination"
-          :is-loading="isLoading"
-          @prev-page="prevPage"
-          @next-page="nextPage"
-          @view="openDetailDialog"
-          @edit="openEditDialog"
-          @delete="deleteQuestion"
-        />
-      </div>
+      <QuestionTable
+        :questions="displayQuestions"
+        :pagination="pagination"
+        :is-loading="isLoading"
+        @prev-page="prevPage"
+        @next-page="nextPage"
+        @view="openDetailDialog"
+        @edit="openEditDialog"
+        @delete="deleteQuestion"
+      />
     </div>
 
     <!-- Modals -->
@@ -392,9 +375,9 @@ onMounted(loadData)
       :loading="isSaving"
       :error-message="errorMessage"
       :question="selectedQuestion"
-      :levels="levels"
-      :subjects="subjects"
-      :topics="topics"
+      :levels="metadataStore.levels"
+      :subjects="metadataStore.subjects"
+      :topics="metadataStore.topics"
       @close="closeDialog"
       @submit="handleSubmitQuestion"
     />
@@ -407,9 +390,15 @@ onMounted(loadData)
 
     <AiGenerateQuestionsDialog
       :open="isAiGenerateOpen"
-      :topics="topics"
+      :topics="metadataStore.topics"
       @close="isAiGenerateOpen = false"
       @generated="loadData"
+    />
+
+    <ImportExcelDialog
+      :open="isImportExcelOpen"
+      @close="isImportExcelOpen = false"
+      @imported="loadData"
     />
   </div>
 </template>

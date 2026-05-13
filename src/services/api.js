@@ -55,6 +55,30 @@ export const questionsAPI = {
   ...createCrudApi('/questions'),
   createBatch(data) {
     return apiClient.post('/questions/batch', data)
+  },
+  importExcel(file, imageFolderPath) {
+    const formData = new FormData()
+    formData.append('file', file)
+    if (imageFolderPath) {
+      formData.append('imageFolderPath', imageFolderPath)
+    }
+    return apiClient.post('/questions/import', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    })
+  },
+  importExcelPreview(file, imageFolderPath) {
+    const formData = new FormData()
+    formData.append('file', file)
+    if (imageFolderPath) {
+      formData.append('imageFolderPath', imageFolderPath)
+    }
+    return apiClient.post('/questions/import/preview', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    })
   }
 }
 
@@ -80,6 +104,21 @@ export const statisticsAPI = {
 export const aiAPI = {
   generateQuestions(data) {
     return apiClient.post('/ai-content/generate-questions', data)
+  }
+}
+
+export const adminUsersAPI = {
+  getAll(params = {}) {
+    return apiClient.get('/admin/users', { params })
+  },
+  updateStatus(id, enabled) {
+    return apiClient.put(`/admin/users/${id}/status`, null, { params: { enabled } })
+  },
+  updateBalance(id, amount, type) {
+    return apiClient.put(`/admin/users/${id}/balance`, { amount, type })
+  },
+  updateUser(id, data) {
+    return apiClient.put(`/admin/users/${id}`, data)
   }
 }
 

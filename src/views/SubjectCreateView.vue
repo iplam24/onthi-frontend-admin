@@ -147,7 +147,7 @@ onMounted(() => {
       </section>
 
       <!-- Main Form -->
-      <div class="app-surface shadow-xl p-8 max-w-4xl">
+      <div class="app-surface shadow-xl p-8 max-w-4xl mx-auto w-full">
         <form @submit.prevent="saveSubject" class="space-y-10">
           <div class="grid gap-8 md:grid-cols-2">
             <div class="space-y-3 md:col-span-2">

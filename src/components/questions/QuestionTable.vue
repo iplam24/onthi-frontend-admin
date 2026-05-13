@@ -41,119 +41,102 @@ function getContentFormatLabel(contentFormat) {
 </script>
 
 <template>
-  <div class="overflow-hidden rounded-[1.75rem] border border-border/70 bg-card/85 shadow-[0_18px_50px_-28px_rgba(15,23,42,0.35)] backdrop-blur-xl">
-    <div class="border-b border-border/70 bg-gradient-to-r from-background via-background to-muted/30 px-6 py-5">
-      <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+  <div class="app-surface shadow-xl overflow-hidden flex flex-col">
+    <div class="border-b border-border/50 bg-secondary/10 px-8 py-6">
+      <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 class="text-xl font-semibold text-foreground">Danh sách câu hỏi</h2>
-          <p class="mt-1 text-sm text-muted-foreground">
-            Hiển thị {{ pagination.numberOfElements }} / {{ pagination.totalElements }} câu hỏi
+          <h2 class="text-xl font-bold text-foreground">Danh sách câu hỏi</h2>
+          <p class="mt-1 text-sm text-muted-foreground font-medium">
+            Hiển thị <span class="text-primary font-bold">{{ pagination.numberOfElements }}</span> / {{ pagination.totalElements }} câu hỏi
             <span v-if="pagination.totalPages > 1"> — Trang {{ pagination.page + 1 }}/{{ pagination.totalPages }}</span>
           </p>
         </div>
 
-        <div v-if="isLoading" class="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
-          <Loader2 class="h-4 w-4 animate-spin" />
-          Đang tải dữ liệu
+        <div v-if="isLoading" class="app-kicker !bg-primary/20">
+          <Loader2 class="h-3.5 w-3.5 animate-spin mr-2" />
+          Đang cập nhật...
         </div>
       </div>
     </div>
 
-    <div class="max-h-[32rem] overflow-auto">
-      <table class="min-w-full border-separate border-spacing-0">
+    <div class="overflow-x-auto custom-scrollbar">
+      <table class="w-full text-left border-collapse">
         <thead>
-          <tr class="sticky top-0 z-10 border-b border-border/70 bg-background/95 text-left text-xs uppercase tracking-[0.2em] text-muted-foreground backdrop-blur-xl">
-            <th class="px-6 py-3 font-semibold">Nội dung</th>
-            <th class="px-6 py-3 font-semibold">Học liệu</th>
-            <th class="px-6 py-3 font-semibold">Ảnh</th>
-            <th class="px-6 py-3 font-semibold">Loại</th>
-            <th class="px-6 py-3 font-semibold">Độ khó</th>
-            <th class="px-6 py-3 font-semibold">Người tạo</th>
-            <th class="px-6 py-3 font-semibold">Số đáp án</th>
-            <th class="px-6 py-3 font-semibold">Thao tác</th>
+          <tr class="bg-secondary/5 text-muted-foreground uppercase text-[10px] font-black tracking-widest sticky top-0 z-10 backdrop-blur-md border-b border-border/40">
+            <th class="px-8 py-4">Nội dung</th>
+            <th class="px-6 py-4">Học liệu</th>
+            <th class="px-6 py-4 text-center">Ảnh</th>
+            <th class="px-6 py-4">Loại</th>
+            <th class="px-6 py-4">Độ khó</th>
+            <th class="px-6 py-4 text-center">Đáp án</th>
+            <th class="px-8 py-4 text-right">Thao tác</th>
           </tr>
         </thead>
-        <tbody>
-          <tr v-if="isLoading" v-for="row in 4" :key="`skeleton-${row}`" class="border-b border-border last:border-b-0">
-            <td class="px-6 py-4"><div class="h-4 w-56 animate-pulse rounded-full bg-muted"></div></td>
-            <td class="px-6 py-4">
-              <div class="space-y-2">
-                <div class="h-3 w-40 animate-pulse rounded-full bg-muted"></div>
-                <div class="h-3 w-28 animate-pulse rounded-full bg-muted"></div>
-                <div class="h-3 w-20 animate-pulse rounded-full bg-muted"></div>
-              </div>
-            </td>
-            <td class="px-6 py-4"><div class="h-12 w-12 animate-pulse rounded-2xl bg-muted"></div></td>
-            <td class="px-6 py-4"><div class="h-4 w-24 animate-pulse rounded-full bg-muted"></div></td>
-            <td class="px-6 py-4"><div class="h-4 w-16 animate-pulse rounded-full bg-muted"></div></td>
-            <td class="px-6 py-4"><div class="h-4 w-20 animate-pulse rounded-full bg-muted"></div></td>
-            <td class="px-6 py-4"><div class="h-4 w-10 animate-pulse rounded-full bg-muted"></div></td>
-            <td class="px-6 py-4"><div class="h-9 w-40 animate-pulse rounded-full bg-muted"></div></td>
+        <tbody class="divide-y divide-border/30">
+          <tr v-if="isLoading && !renderedQuestions.length" v-for="row in 4" :key="`skeleton-${row}`">
+            <td class="px-8 py-6"><div class="h-4 w-56 animate-pulse rounded-full bg-muted/40"></div></td>
+            <td class="px-6 py-6"><div class="h-3 w-40 animate-pulse rounded-full bg-muted/40"></div></td>
+            <td class="px-6 py-6 flex justify-center"><div class="h-10 w-10 animate-pulse rounded-xl bg-muted/40"></div></td>
+            <td class="px-6 py-6"><div class="h-4 w-20 animate-pulse rounded-full bg-muted/40"></div></td>
+            <td class="px-6 py-6"><div class="h-4 w-16 animate-pulse rounded-full bg-muted/40"></div></td>
+            <td class="px-6 py-6 text-center"><div class="h-4 w-8 animate-pulse rounded-full bg-muted/40 mx-auto"></div></td>
+            <td class="px-8 py-6"><div class="h-8 w-32 animate-pulse rounded-full bg-muted/40 ml-auto"></div></td>
           </tr>
           <tr v-else-if="!hasQuestions">
-            <td colspan="8" class="px-6 py-10 text-center text-sm text-muted-foreground">
-              Chưa có dữ liệu câu hỏi.
+            <td colspan="7" class="px-8 py-20 text-center">
+              <div class="flex flex-col items-center gap-3 opacity-40">
+                <svg class="h-12 w-12 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                <p class="text-sm font-bold uppercase tracking-widest">Không có dữ liệu câu hỏi</p>
+              </div>
             </td>
           </tr>
-          <tr v-for="question in renderedQuestions" :key="question.id" class="group border-b border-border/60 last:border-b-0 transition-colors hover:bg-gradient-to-r hover:from-primary/5 hover:to-cyan-500/5">
-            <td class="px-6 py-5 text-sm font-medium text-foreground">
-              <div class="space-y-2">
-                <div class="max-w-[34rem] break-words leading-6" v-html="question.renderedContent" />
-                <span class="inline-flex items-center rounded-full bg-muted px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+          <tr v-for="question in renderedQuestions" :key="question.id" class="group transition-all hover:bg-primary/[0.02]">
+            <td class="px-8 py-6">
+              <div class="space-y-2.5">
+                <div class="max-w-2xl text-[14px] leading-relaxed text-foreground/90 font-medium line-clamp-3 group-hover:line-clamp-none transition-all" v-html="question.renderedContent" />
+                <span class="app-kicker !px-2 !py-0.5 !text-[9px] !bg-muted/50 !text-muted-foreground border-border/40">
                   {{ question.contentFormatLabel }}
                 </span>
               </div>
             </td>
-            <td class="px-6 py-4 text-sm text-foreground">
+            <td class="px-6 py-6">
               <div class="space-y-1">
-                <p class="font-semibold text-foreground">{{ question.topicLabel }}</p>
-                <p class="text-xs text-muted-foreground">Môn học: {{ question.subjectLabel }}</p>
-                <p class="text-xs text-muted-foreground">Level: {{ question.levelLabel }}</p>
+                <p class="text-xs font-bold text-foreground">{{ question.topicLabel }}</p>
+                <p class="text-[11px] text-muted-foreground font-medium">{{ question.subjectLabel }}</p>
               </div>
             </td>
-            <td class="px-6 py-4 text-sm text-foreground">
-              <img
-                v-if="question.imageUrl"
-                :src="question.imageUrl"
-                alt="question image"
-                class="h-12 w-12 rounded-2xl border border-border object-cover shadow-sm"
-              />
-              <span v-else class="text-muted-foreground">—</span>
+            <td class="px-6 py-6">
+              <div class="flex justify-center">
+                <img v-if="question.imageUrl" :src="question.imageUrl" alt="image" class="h-10 w-10 rounded-xl border border-border/50 object-cover shadow-sm group-hover:scale-110 transition-transform" />
+                <span v-else class="text-[10px] font-black text-muted-foreground/30">—</span>
+              </div>
             </td>
-            <td class="px-6 py-4 text-sm text-foreground">
-              <span
-                class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold tracking-wide"
-                :class="question.type === 'ESSAY'
-                  ? 'bg-fuchsia-500/10 text-fuchsia-700 ring-1 ring-fuchsia-500/20 dark:text-fuchsia-300'
-                  : 'bg-cyan-500/10 text-cyan-700 ring-1 ring-cyan-500/20 dark:text-cyan-300'"
-              >
+            <td class="px-6 py-6">
+              <span class="inline-flex items-center rounded-lg px-2.5 py-1 text-[11px] font-bold border"
+                :class="question.type === 'ESSAY' ? 'bg-purple-500/10 text-purple-600 border-purple-500/20' : 'bg-blue-500/10 text-blue-600 border-blue-500/20'">
                 {{ question.renderedTypeLabel }}
               </span>
             </td>
-            <td class="px-6 py-4 text-sm text-foreground">
-              <span
-                class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold tracking-wide"
-                :class="question.difficulty === 'HARD'
-                  ? 'bg-rose-500/10 text-rose-700 ring-1 ring-rose-500/20 dark:text-rose-300'
-                  : question.difficulty === 'MEDIUM'
-                    ? 'bg-amber-500/10 text-amber-700 ring-1 ring-amber-500/20 dark:text-amber-300'
-                    : 'bg-emerald-500/10 text-emerald-700 ring-1 ring-emerald-500/20 dark:text-emerald-300'"
-              >
+            <td class="px-6 py-6">
+              <span class="inline-flex items-center rounded-lg px-2.5 py-1 text-[11px] font-bold border uppercase" 
+                :class="{
+                  'bg-green-500/10 text-green-600 border-green-500/20': question.difficulty === 'EASY',
+                  'bg-amber-500/10 text-amber-600 border-amber-500/20': question.difficulty === 'MEDIUM',
+                  'bg-red-500/10 text-red-600 border-red-500/20': question.difficulty === 'HARD'
+                }">
                 {{ question.difficultyLabel }}
               </span>
             </td>
-            <td class="px-6 py-4 text-sm text-foreground">{{ question.creatorLabel || '—' }}</td>
-            <td class="px-6 py-4 text-sm text-foreground">{{ question.optionsCount }}</td>
-            <td class="px-6 py-4">
-              <div class="flex flex-wrap gap-2">
-                <button class="rounded-full border border-border/80 bg-background px-3 py-2 text-sm font-medium text-foreground shadow-sm transition hover:-translate-y-0.5 hover:border-primary/30 hover:bg-primary/5" @click="emit('view', question)">
-                  Chi tiết
+            <td class="px-6 py-6 text-center">
+              <span class="text-sm font-black text-foreground/70">{{ question.optionsCount }}</span>
+            </td>
+            <td class="px-8 py-6">
+              <div class="flex items-center justify-end gap-2 opacity-60 group-hover:opacity-100 transition-opacity">
+                <button @click="emit('edit', question)" class="p-2 rounded-xl border border-border/50 hover:bg-primary hover:text-white hover:border-primary transition-all">
+                  <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                 </button>
-                <button class="rounded-full border border-border/80 bg-background px-3 py-2 text-sm font-medium text-foreground shadow-sm transition hover:-translate-y-0.5 hover:border-primary/30 hover:bg-primary/5" @click="emit('edit', question)">
-                  Sửa
-                </button>
-                <button class="rounded-full border border-destructive/20 bg-destructive/5 px-3 py-2 text-sm font-medium text-destructive shadow-sm transition hover:-translate-y-0.5 hover:bg-destructive/10" @click="emit('delete', question)">
-                  Xóa
+                <button @click="emit('delete', question)" class="p-2 rounded-xl border border-border/50 hover:bg-destructive hover:text-white hover:border-destructive transition-all">
+                  <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                 </button>
               </div>
             </td>
@@ -162,20 +145,20 @@ function getContentFormatLabel(contentFormat) {
       </table>
     </div>
 
-    <div class="flex items-center justify-between gap-3 border-t border-border/70 bg-background/60 px-6 py-4 backdrop-blur-xl">
-      <p class="text-sm font-medium text-muted-foreground">
-        Trang {{ pagination.page + 1 }} / {{ pagination.totalPages || 1 }}
+    <div class="mt-auto flex items-center justify-between border-t border-border/50 bg-secondary/5 px-8 py-5">
+      <p class="text-xs font-bold text-muted-foreground uppercase tracking-widest">
+        Trang {{ pagination.page + 1 }} <span class="mx-2 opacity-30">/</span> {{ pagination.totalPages || 1 }}
       </p>
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-3">
         <button
-          class="rounded-full border border-border/80 bg-background px-4 py-2 text-sm font-medium text-foreground shadow-sm transition hover:-translate-y-0.5 hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+          class="app-btn-secondary !px-5 !py-2 !text-xs disabled:opacity-30"
           :disabled="!pagination.hasPrevious || isLoading"
           @click="emit('prev-page')"
         >
           Trang trước
         </button>
         <button
-          class="rounded-full border border-border/80 bg-background px-4 py-2 text-sm font-medium text-foreground shadow-sm transition hover:-translate-y-0.5 hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+          class="app-btn-secondary !px-5 !py-2 !text-xs disabled:opacity-30"
           :disabled="!pagination.hasNext || isLoading"
           @click="emit('next-page')"
         >
