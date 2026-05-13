@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import BaseDialog from '@/components/ui/BaseDialog.vue'
 import { API_CONFIG } from '@/constants'
+import { resolveBackendUrl } from '@/utils/url'
 import { renderQuestionContent } from '@/utils/questionContent'
 
 const props = defineProps({
@@ -19,21 +20,7 @@ const emit = defineEmits(['close'])
 const detailQuestion = computed(() => props.question)
 
 function resolveMediaUrl(url) {
-  if (!url) return ''
-  if (/^https?:\/\//i.test(url)) return url
-
-  const normalizedPath = String(url).startsWith('/') ? String(url) : `/${url}`
-  const apiBase = API_CONFIG.BASE_URL || ''
-
-  if (/^https?:\/\//i.test(apiBase)) {
-    return `${new URL(apiBase).origin}${normalizedPath}`
-  }
-
-  if (typeof window !== 'undefined') {
-    return `${window.location.origin}${normalizedPath}`
-  }
-
-  return normalizedPath
+  return resolveBackendUrl(url)
 }
 
 function getTypeLabel(type) {

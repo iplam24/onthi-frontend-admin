@@ -41,15 +41,16 @@
           >
             <div
               v-if="showUserMenu"
-              class="app-surface absolute right-0 mt-3 w-56 p-2 shadow-2xl !bg-white/95 dark:!bg-black/95"
+              class="app-surface absolute right-0 mt-3 w-56 p-2 shadow-2xl !bg-white/95 dark:!bg-black/95 z-[100]"
             >
               <div class="px-3 py-3 border-b border-border/50 mb-1">
                 <p class="text-xs font-bold text-foreground">{{ authStore.userName }}</p>
                 <p class="text-[10px] text-muted-foreground truncate">admin@edu-system.com</p>
               </div>
               <button
+                type="button"
                 @click="handleLogout"
-                class="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-destructive transition-colors hover:bg-destructive/10"
+                class="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-destructive transition-all hover:bg-destructive/10 active:scale-95"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
                 Đăng xuất

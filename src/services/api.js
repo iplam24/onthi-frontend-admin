@@ -112,7 +112,7 @@ export const adminUsersAPI = {
     return apiClient.get('/admin/users', { params })
   },
   updateStatus(id, enabled) {
-    return apiClient.put(`/admin/users/${id}/status`, null, { params: { enabled } })
+    return apiClient.put(`/admin/users/${id}/status`, { enabled })
   },
   updateBalance(id, amount, type) {
     return apiClient.put(`/admin/users/${id}/balance`, { amount, type })

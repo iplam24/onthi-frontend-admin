@@ -2,6 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, reactive, ref, watch } from 'vue'
 import BaseDialog from '@/components/ui/BaseDialog.vue'
 import { API_CONFIG } from '@/constants'
+import { resolveBackendUrl } from '@/utils/url'
 import { RefreshCw as RefreshIcon, Trash2 as TrashIcon } from 'lucide-vue-next'
 import { renderQuestionContent } from '@/utils/questionContent'
 
@@ -123,21 +124,7 @@ function getSubjectName(subjectId) {
 }
 
 function resolveMediaUrl(url) {
-  if (!url) return ''
-  if (/^https?:\/\//i.test(url)) return url
-
-  const normalizedPath = String(url).startsWith('/') ? String(url) : `/${url}`
-  const apiBase = API_CONFIG.BASE_URL || ''
-
-  if (/^https?:\/\//i.test(apiBase)) {
-    return `${new URL(apiBase).origin}${normalizedPath}`
-  }
-
-  if (typeof window !== 'undefined') {
-    return `${window.location.origin}${normalizedPath}`
-  }
-
-  return normalizedPath
+  return resolveBackendUrl(url)
 }
 
 function focusContentInput() {

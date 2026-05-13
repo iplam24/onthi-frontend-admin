@@ -126,23 +126,23 @@ const hasExams = computed(() => props.exams.length > 0)
             <td class="px-6 py-5 align-top text-sm text-foreground">{{ exam.questions?.length ?? 0 }}</td>
             <td class="px-6 py-5 align-top text-sm text-foreground">{{ exam.totalScore }}</td>
             <td class="px-6 py-5 align-top">
-              <div class="flex flex-wrap gap-2">
+              <div class="flex flex-wrap gap-2 relative z-10">
                 <button
-                  class="inline-flex items-center gap-1 rounded-full border border-border/80 bg-background px-3 py-2 text-sm font-medium text-foreground shadow-sm transition hover:-translate-y-0.5 hover:border-primary/30 hover:bg-primary/5"
+                  class="inline-flex items-center gap-1 rounded-full border border-border/80 bg-background px-3 py-2 text-sm font-medium text-foreground shadow-sm transition hover:border-primary/30 hover:bg-primary/5 active:scale-95"
                   @click="emit('view', exam)"
                 >
                   <Eye class="h-4 w-4" />
                   Chi tiết
                 </button>
                 <button
-                  class="inline-flex items-center gap-1 rounded-full border border-border/80 bg-background px-3 py-2 text-sm font-medium text-foreground shadow-sm transition hover:-translate-y-0.5 hover:border-primary/30 hover:bg-primary/5"
+                  class="inline-flex items-center gap-1 rounded-full border border-border/80 bg-background px-3 py-2 text-sm font-medium text-foreground shadow-sm transition hover:border-primary/30 hover:bg-primary/5 active:scale-95"
                   @click="emit('edit', exam)"
                 >
                   <Pencil class="h-4 w-4" />
                   Sửa
                 </button>
                 <button
-                  class="inline-flex items-center gap-1 rounded-full border border-destructive/20 bg-destructive/5 px-3 py-2 text-sm font-medium text-destructive shadow-sm transition hover:-translate-y-0.5 hover:bg-destructive/10"
+                  class="inline-flex items-center gap-1 rounded-full border border-destructive/20 bg-destructive/5 px-3 py-2 text-sm font-medium text-destructive shadow-sm transition hover:bg-destructive/10 active:scale-95"
                   @click="emit('delete', exam)"
                 >
                   <Trash2 class="h-4 w-4" />
@@ -159,16 +159,16 @@ const hasExams = computed(() => props.exams.length > 0)
       <p class="text-sm font-medium text-muted-foreground">
         Trang {{ pagination.page + 1 }} / {{ pagination.totalPages || 1 }}
       </p>
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-2 relative z-10">
         <button
-          class="rounded-full border border-border/80 bg-background px-4 py-2 text-sm font-medium text-foreground shadow-sm transition hover:-translate-y-0.5 hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+          class="rounded-full border border-border/80 bg-background px-4 py-2 text-sm font-medium text-foreground shadow-sm transition hover:bg-muted active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
           :disabled="!pagination.hasPrevious || isLoading"
           @click="emit('prev-page')"
         >
           Trang trước
         </button>
         <button
-          class="rounded-full border border-border/80 bg-background px-4 py-2 text-sm font-medium text-foreground shadow-sm transition hover:-translate-y-0.5 hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+          class="rounded-full border border-border/80 bg-background px-4 py-2 text-sm font-medium text-foreground shadow-sm transition hover:bg-muted active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
           :disabled="!pagination.hasNext || isLoading"
           @click="emit('next-page')"
         >

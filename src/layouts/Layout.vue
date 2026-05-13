@@ -3,7 +3,7 @@
     <!-- Global Loading Bar -->
     <div 
       v-if="metadataStore.isLoading"
-      class="fixed top-0 left-0 right-0 z-[9999] h-1.5 bg-secondary/30 overflow-hidden"
+      class="fixed top-0 left-0 right-0 z-[9999] h-1.5 bg-secondary/30 overflow-hidden pointer-events-none"
     >
       <div class="h-full bg-gradient-to-r from-primary via-violet-600 to-cyan-500 animate-shimmer-fast"></div>
     </div>

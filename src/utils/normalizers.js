@@ -1,3 +1,5 @@
+import { resolveBackendUrl } from './url'
+
 export function normalizeCollection(payload) {
   const raw = payload?.data ?? payload
   const collection = raw?.data ?? raw
@@ -21,7 +23,7 @@ export function normalizeSubject(item) {
   return {
     id: item?.id ?? item?._id,
     name: item?.name ?? '',
-    imageUrl: item?.imageUrl ?? null,
+    imageUrl: item?.imageUrl ? resolveBackendUrl(item.imageUrl) : null,
     levelId: item?.levelId ?? '',
     levelName: item?.levelName ?? ''
   }
@@ -39,12 +41,14 @@ export function normalizeTopic(item) {
 }
 
 export function normalizeQuestion(item) {
+  const url = item?.url ? resolveBackendUrl(item.url) : ''
   return {
     id: item?.id ?? item?._id,
     content: item?.content ?? '',
     contentFormat: item?.contentFormat ?? 'PLAIN_TEXT',
     questionContent: item?.questionContent ?? item?.content ?? '',
-    url: item?.url ?? '',
+    url,
+    imageUrl: url,
     topicId: item?.topicId ?? '',
     topicName: item?.topicName ?? '',
     type: item?.type ?? item?.questionType ?? '',
@@ -98,6 +102,23 @@ export function normalizeExam(item) {
     createdAt: item?.createdAt ?? '',
     updatedAt: item?.updatedAt ?? '',
     questions: questionsData.map((question, index) => normalizeExamQuestion(question, index))
+  }
+}
+
+export function normalizeUser(item) {
+  return {
+    id: item?.id ?? item?._id,
+    username: item?.username ?? '',
+    email: item?.email ?? '',
+    fullName: item?.fullName ?? item?.name ?? '',
+    schoolName: item?.schoolName ?? '',
+    levelId: item?.levelId ?? null,
+    levelName: item?.levelName ?? '',
+    dob: item?.dob ?? '',
+    avatar: item?.avatar ?? '',
+    balance: Number(item?.balance ?? 0) || 0,
+    enabled: !!(item?.enabled ?? item?.isActive ?? true),
+    roleName: item?.roleName ?? item?.role ?? 'USER'
   }
 }
 

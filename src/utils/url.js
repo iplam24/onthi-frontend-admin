@@ -1,42 +1,29 @@
 import { API_CONFIG } from '@/constants'
 
 /**
- * Resolves a media URL to a full, absolute URL.
- * - If the URL is already absolute, it's returned as is.
- * - If the URL is relative, it's combined with the API base URL.
- *
- * @param {string | null | undefined} url The URL to resolve.
- * @returns {string} The resolved, absolute URL, or an empty string if the input is invalid.
+ * Resolves a potentially relative media URL from the backend into a full URL.
+ * @param {string} url - The URL or path to resolve.
+ * @returns {string} - The full resolved URL.
  */
-export function resolveMediaUrl(url) {
-  if (!url) {
-    return ''
-  }
-  // If the URL is already absolute, return it directly.
-  if (/^https?:\/\//i.test(url)) {
-    return url
-  }
+export function resolveBackendUrl(url) {
+  if (!url) return ''
+  if (/^https?:\/\//i.test(url)) return url
+  if (url.startsWith('data:') || url.startsWith('blob:')) return url
 
-  // Normalize the path to ensure it starts with a slash.
-  const normalizedPath = String(url).startsWith('/') ? url : `/${url}`
-
-  // Get the API base URL from the configuration.
   const apiBase = API_CONFIG.BASE_URL || ''
+  let origin = ''
 
-  // If the API base URL is an absolute URL, use its origin.
-  if (/^https?:\/\//i.test(apiBase)) {
+  if (apiBase.startsWith('http')) {
     try {
-      const origin = new URL(apiBase).origin
-      return `${origin}${normalizedPath}`
+      const urlObj = new URL(apiBase)
+      origin = urlObj.origin
     } catch (e) {
-      // Fallback if the URL is malformed.
+      origin = apiBase.split('/api')[0]
     }
+  } else if (typeof window !== 'undefined') {
+    origin = window.location.origin
   }
 
-  // Fallback for relative base URLs or in a server-side rendering context.
-  if (typeof window !== 'undefined') {
-    return `${window.location.origin}${normalizedPath}`
-  }
-
-  return normalizedPath
+  const normalizedPath = String(url).startsWith('/') ? String(url) : `/${url}`
+  return `${origin}${normalizedPath}`
 }

@@ -41,19 +41,10 @@ const pagination = reactive({
   hasPrevious: false
 })
 
+import { resolveBackendUrl } from '@/utils/url'
+
 function resolveMediaUrl(url) {
-  if (!url) return ''
-  if (/^https?:\/\//i.test(url)) return url
-
-  const apiBase = API_CONFIG.BASE_URL || ''
-  let origin = apiBase
-  
-  if (apiBase.includes('/api')) {
-    origin = apiBase.split('/api')[0]
-  }
-
-  const normalizedPath = String(url).startsWith('/') ? String(url) : `/${url}`
-  return `${origin}${normalizedPath}`
+  return resolveBackendUrl(url)
 }
 
 function getTopicName(topicId, fallbackName) {

@@ -1,5 +1,6 @@
 <script setup>
 import { onMounted, reactive, ref, computed } from 'vue'
+import { normalizeCollection, normalizeUser } from '@/utils/normalizers'
 import { adminUsersAPI, filesAPI } from '@/services/api'
 import { useMetadataStore } from '@/stores/metadataStore'
 import { 
@@ -78,11 +79,11 @@ async function loadUsers() {
     const response = await adminUsersAPI.getAll(params)
     const pageData = response.data?.data || response.data
     
-    users.value = pageData.content || []
-    pagination.totalElements = pageData.totalElements || 0
-    pagination.totalPages = pageData.totalPages || 0
-    pagination.first = pageData.first
-    pagination.last = pageData.last
+    users.value = normalizeCollection(pageData).map(normalizeUser)
+    pagination.totalElements = pageData.totalElements || users.value.length
+    pagination.totalPages = pageData.totalPages || 1
+    pagination.first = pageData.first ?? true
+    pagination.last = pageData.last ?? true
   } catch (error) {
     errorMessage.value = 'Không thể tải danh sách người dùng'
     console.error(error)
@@ -183,20 +184,10 @@ function showSuccess(msg) {
   setTimeout(() => successMessage.value = '', 3000)
 }
 
+import { resolveBackendUrl } from '@/utils/url'
+
 function resolveAvatar(url) {
-  if (!url) return null
-  if (url.startsWith('http')) return url
-
-  // If path is relative, prepend backend origin (stripping /api if present)
-  const apiBase = API_CONFIG.BASE_URL || ''
-  let origin = apiBase
-  
-  if (apiBase.includes('/api')) {
-    origin = apiBase.split('/api')[0]
-  }
-
-  const normalizedPath = url.startsWith('/') ? url : `/${url}`
-  return `${origin}${normalizedPath}`
+  return resolveBackendUrl(url)
 }
 
 function formatDate(dateString) {
@@ -323,7 +314,7 @@ onMounted(async () => {
                   </div>
                 </td>
               </tr>
-              <tr v-for="user in users" :key="user.id" class="group transition-all hover:bg-primary/[0.02]">
+              <tr v-for="user in users" :key="user.id" class="group transition-colors duration-200 hover:bg-primary/[0.02]">
                 <td class="px-8 py-6">
                   <div class="flex items-center gap-5">
                     <div class="h-14 w-14 rounded-2xl bg-gradient-to-br from-primary/20 to-violet-500/20 border border-primary/20 flex items-center justify-center overflow-hidden shrink-0 shadow-inner group-hover:scale-105 transition-transform">
@@ -373,15 +364,28 @@ onMounted(async () => {
                   </span>
                 </td>
                 <td class="px-8 py-6">
-                  <div class="flex items-center justify-end gap-3 opacity-60 group-hover:opacity-100 transition-opacity">
-                    <button @click="openBalanceModal(user)" class="h-10 w-10 flex items-center justify-center rounded-xl border border-border/50 bg-white dark:bg-black/20 hover:bg-green-500 hover:text-white hover:border-green-500 transition-all shadow-sm" title="Quản lý số dư">
-                      <Wallet class="h-4 w-4" />
+                  <div class="flex items-center justify-end gap-3 relative z-10">
+                    <button 
+                      @click="openBalanceModal(user)" 
+                      class="h-10 w-10 flex items-center justify-center rounded-xl border border-border/50 bg-white dark:bg-black/20 text-muted-foreground/80 hover:bg-green-500 hover:text-white hover:border-green-500 transition-colors duration-200 shadow-sm cursor-pointer" 
+                      title="Quản lý số dư"
+                    >
+                      <Wallet class="h-5 w-5" />
                     </button>
-                    <button @click="openEditModal(user)" class="h-10 w-10 flex items-center justify-center rounded-xl border border-border/50 bg-white dark:bg-black/20 hover:bg-primary hover:text-white hover:border-primary transition-all shadow-sm" title="Chỉnh sửa hồ sơ">
-                      <Edit3 class="h-4 w-4" />
+                    <button 
+                      @click="openEditModal(user)" 
+                      class="h-10 w-10 flex items-center justify-center rounded-xl border border-border/50 bg-white dark:bg-black/20 text-muted-foreground/80 hover:bg-primary hover:text-white hover:border-primary transition-colors duration-200 shadow-sm cursor-pointer" 
+                      title="Chỉnh sửa hồ sơ"
+                    >
+                      <Edit3 class="h-5 w-5" />
                     </button>
-                    <button @click="toggleUserStatus(user)" class="h-10 w-10 flex items-center justify-center rounded-xl border border-border/50 bg-white dark:bg-black/20 hover:bg-destructive hover:text-white hover:border-destructive transition-all shadow-sm" :title="user.enabled ? 'Khóa người dùng' : 'Mở khóa người dùng'">
-                      <Ban class="h-4 w-4" />
+                    <button 
+                      @click="toggleUserStatus(user)" 
+                      class="h-10 w-10 flex items-center justify-center rounded-xl border border-border/50 bg-white dark:bg-black/20 text-muted-foreground/80 hover:bg-destructive hover:text-white hover:border-destructive transition-colors duration-200 shadow-sm cursor-pointer" 
+                      :title="user.enabled ? 'Khóa người dùng' : 'Mở khóa người dùng'"
+                    >
+                      <Ban v-if="user.enabled" class="h-5 w-5" />
+                      <CheckCircle2 v-else class="h-5 w-5" />
                     </button>
                   </div>
                 </td>
@@ -405,7 +409,7 @@ onMounted(async () => {
           <p class="text-xs font-black text-muted-foreground uppercase tracking-widest">
             Hiển thị {{ users.length }} / {{ pagination.totalElements }} người dùng
           </p>
-          <div class="flex items-center gap-3">
+          <div class="flex items-center gap-3 relative z-10">
             <button 
               :disabled="pagination.first || isLoading"
               @click="pagination.page--; loadUsers()"
@@ -426,9 +430,8 @@ onMounted(async () => {
     </div>
 
     <!-- Edit Modal -->
-    <div v-if="isEditModalOpen" class="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-xl bg-black/60 transition-all">
-      <div class="absolute inset-0" @click="isEditModalOpen = false"></div>
-      <div class="app-surface w-full max-w-xl p-10 relative z-10 shadow-[0_32px_128px_rgba(0,0,0,0.5)] border-white/10 animate-in zoom-in-95 duration-300">
+    <div v-if="isEditModalOpen" class="fixed inset-0 z-[9999] flex items-center justify-center p-6 backdrop-blur-xl bg-black/60 transition-all" @click.self="isEditModalOpen = false">
+      <div class="app-surface !overflow-visible w-full max-w-xl p-10 relative z-10 shadow-[0_32px_128px_rgba(0,0,0,0.5)] border-white/10 animate-in zoom-in-95 duration-300" @click.stop>
         <div class="flex items-center justify-between mb-10">
           <div>
             <h3 class="text-3xl font-black text-foreground tracking-tighter">Chỉnh sửa hồ sơ</h3>
@@ -503,9 +506,8 @@ onMounted(async () => {
     </div>
 
     <!-- Balance Modal -->
-    <div v-if="isBalanceModalOpen" class="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-xl bg-black/60 transition-all">
-      <div class="absolute inset-0" @click="isBalanceModalOpen = false"></div>
-      <div class="app-surface w-full max-w-sm p-10 relative z-10 shadow-[0_32px_128px_rgba(0,0,0,0.5)] border-white/10 animate-in zoom-in-95 duration-300">
+    <div v-if="isBalanceModalOpen" class="fixed inset-0 z-[9999] flex items-center justify-center p-6 backdrop-blur-xl bg-black/60 transition-all" @click.self="isBalanceModalOpen = false">
+      <div class="app-surface !overflow-visible w-full max-w-sm p-10 relative z-10 shadow-[0_32px_128px_rgba(0,0,0,0.5)] border-white/10 animate-in zoom-in-95 duration-300" @click.stop>
         <div class="text-center mb-10">
           <div class="h-16 w-16 rounded-full bg-green-500/10 flex items-center justify-center mx-auto mb-4 border border-green-500/20 shadow-lg">
             <Wallet class="h-8 w-8 text-green-600" />
