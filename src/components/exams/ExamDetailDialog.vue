@@ -92,10 +92,23 @@ const safeExam = computed(() => ({
         </div>
       </div>
 
-      <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+      <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
         <div class="rounded-xl border border-border bg-background p-4">
           <p class="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Người tạo</p>
           <p class="mt-2 text-base font-semibold text-foreground">{{ safeExam.createdByUsername || '—' }}</p>
+        </div>
+        <div class="rounded-xl border border-border bg-background p-4">
+          <p class="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Phạm vi đề thi</p>
+          <p class="mt-2 text-base font-semibold text-foreground">
+            <span
+              class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold"
+              :class="safeExam.isPublic
+                ? 'bg-emerald-500/10 text-emerald-700 ring-1 ring-emerald-500/20'
+                : 'bg-rose-500/10 text-rose-700 ring-1 ring-rose-500/20'"
+            >
+              {{ safeExam.isPublic ? 'Công khai' : 'Riêng tư' }}
+            </span>
+          </p>
         </div>
         <div class="rounded-xl border border-border bg-background p-4">
           <p class="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Tạo lúc</p>

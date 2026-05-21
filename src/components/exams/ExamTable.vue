@@ -94,7 +94,17 @@ const hasExams = computed(() => props.exams.length > 0)
           >
             <td class="px-6 py-5 align-top text-sm font-medium text-foreground">
               <div class="space-y-1">
-                <p class="font-semibold">{{ exam.title }}</p>
+                <div class="flex items-center gap-2 flex-wrap">
+                  <p class="font-semibold">{{ exam.title }}</p>
+                  <span
+                    class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-wider ring-1"
+                    :class="exam.isPublic
+                      ? 'bg-emerald-500/10 text-emerald-700 ring-emerald-500/20 dark:text-emerald-300'
+                      : 'bg-rose-500/10 text-rose-700 ring-rose-500/20 dark:text-rose-300'"
+                  >
+                    {{ exam.isPublic ? 'Công khai' : 'Riêng tư' }}
+                  </span>
+                </div>
                 <p class="text-xs text-muted-foreground">Tạo bởi: {{ exam.createdByUsername || '—' }}</p>
                 <p class="text-xs text-muted-foreground">Cập nhật: {{ formatDateTime(exam.updatedAt || exam.createdAt) }}</p>
               </div>

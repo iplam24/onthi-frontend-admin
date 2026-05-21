@@ -33,6 +33,33 @@ const errorMessage = ref('')
 const successMessage = ref('')
 const query = ref('')
 
+// Client-side advanced filters
+const filterRole = ref('ALL')
+const filterStatus = ref('ALL')
+const filterBalance = ref('ALL')
+
+const filteredUsers = computed(() => {
+  return users.value.filter(user => {
+    // Role filter
+    if (filterRole.value !== 'ALL' && user.roleName !== filterRole.value) {
+      return false
+    }
+    // Status filter
+    if (filterStatus.value !== 'ALL') {
+      const isEnabled = !!user.enabled
+      if (filterStatus.value === 'ENABLED' && !isEnabled) return false
+      if (filterStatus.value === 'DISABLED' && isEnabled) return false
+    }
+    // Balance filter
+    if (filterBalance.value !== 'ALL') {
+      const balance = user.balance || 0
+      if (filterBalance.value === 'HAS_BALANCE' && balance <= 0) return false
+      if (filterBalance.value === 'ZERO_BALANCE' && balance > 0) return false
+    }
+    return true
+  })
+})
+
 // Avatar upload state
 const avatarInputRef = ref(null)
 const pendingAvatarFile = ref(null)
@@ -287,6 +314,34 @@ onMounted(async () => {
           </div>
         </div>
 
+        <!-- Advanced Filter Panel -->
+        <div class="px-8 py-5 border-b border-border/30 bg-zinc-50/50 dark:bg-zinc-900/50 grid grid-cols-1 sm:grid-cols-3 gap-6">
+          <div class="space-y-2">
+            <label class="text-[10px] font-black uppercase tracking-widest text-muted-foreground/85">Vai trò (Role)</label>
+            <select v-model="filterRole" class="app-select !py-2.5 !px-4 shadow-sm">
+              <option value="ALL">Tất cả vai trò</option>
+              <option value="ADMIN">Quản trị viên (ADMIN)</option>
+              <option value="USER">Học viên (USER)</option>
+            </select>
+          </div>
+          <div class="space-y-2">
+            <label class="text-[10px] font-black uppercase tracking-widest text-muted-foreground/85">Trạng thái (Status)</label>
+            <select v-model="filterStatus" class="app-select !py-2.5 !px-4 shadow-sm">
+              <option value="ALL">Tất cả trạng thái</option>
+              <option value="ENABLED">Đang hoạt động (Đang bật)</option>
+              <option value="DISABLED">Đã khóa (Tạm dừng)</option>
+            </select>
+          </div>
+          <div class="space-y-2">
+            <label class="text-[10px] font-black uppercase tracking-widest text-muted-foreground/85">Số dư ví (Balance)</label>
+            <select v-model="filterBalance" class="app-select !py-2.5 !px-4 shadow-sm">
+              <option value="ALL">Tất cả số dư</option>
+              <option value="HAS_BALANCE">Có tiền trong ví (> 0đ)</option>
+              <option value="ZERO_BALANCE">Ví trống (= 0đ)</option>
+            </select>
+          </div>
+        </div>
+
         <div class="overflow-x-auto custom-scrollbar">
           <table class="w-full text-left border-collapse">
             <thead>
@@ -314,7 +369,7 @@ onMounted(async () => {
                   </div>
                 </td>
               </tr>
-              <tr v-for="user in users" :key="user.id" class="group transition-colors duration-200 hover:bg-primary/[0.02]">
+              <tr v-for="user in filteredUsers" :key="user.id" class="group transition-colors duration-200 hover:bg-primary/[0.02]">
                 <td class="px-8 py-6">
                   <div class="flex items-center gap-5">
                     <div class="h-14 w-14 rounded-2xl bg-gradient-to-br from-primary/20 to-violet-500/20 border border-primary/20 flex items-center justify-center overflow-hidden shrink-0 shadow-inner group-hover:scale-105 transition-transform">
@@ -390,7 +445,7 @@ onMounted(async () => {
                   </div>
                 </td>
               </tr>
-              <tr v-if="!isLoading && users.length === 0">
+              <tr v-if="!isLoading && filteredUsers.length === 0">
                 <td colspan="5" class="px-8 py-32 text-center">
                   <div class="flex flex-col items-center gap-4 opacity-30">
                     <div class="h-20 w-20 rounded-full bg-muted flex items-center justify-center">
@@ -407,7 +462,7 @@ onMounted(async () => {
         <!-- Pagination -->
         <div class="px-8 py-6 bg-secondary/5 border-t border-border/50 flex items-center justify-between mt-auto">
           <p class="text-xs font-black text-muted-foreground uppercase tracking-widest">
-            Hiển thị {{ users.length }} / {{ pagination.totalElements }} người dùng
+            Hiển thị {{ filteredUsers.length }} / {{ pagination.totalElements }} người dùng
           </p>
           <div class="flex items-center gap-3 relative z-10">
             <button 

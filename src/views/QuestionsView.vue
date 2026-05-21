@@ -28,6 +28,11 @@ const filters = reactive({
   subjectId: '',
   topicId: ''
 })
+
+// Client-side advanced filters
+const filterDifficulty = ref('ALL')
+const filterType = ref('ALL')
+const filterQuery = ref('')
 const pagination = reactive({
   page: 0,
   size: 10,
@@ -82,6 +87,29 @@ const displayQuestions = computed(() =>
     optionsCount: question.options?.length || 0
   }))
 )
+
+const filteredDisplayQuestions = computed(() => {
+  return displayQuestions.value.filter(question => {
+    // Difficulty filter
+    if (filterDifficulty.value !== 'ALL' && String(question.difficulty).toUpperCase() !== filterDifficulty.value) {
+      return false
+    }
+    // Type filter
+    if (filterType.value !== 'ALL' && String(question.type).toUpperCase() !== filterType.value) {
+      return false
+    }
+    // Quick search filter
+    if (filterQuery.value) {
+      const q = filterQuery.value.toLowerCase().trim()
+      const content = String(question.content || '').toLowerCase()
+      const explanation = String(question.explanation || '').toLowerCase()
+      if (!content.includes(q) && !explanation.includes(q)) {
+        return false
+      }
+    }
+    return true
+  })
+})
 
 const filteredTopicOptions = computed(() => {
   if (!filters.subjectId) return metadataStore.topics
@@ -303,17 +331,18 @@ onMounted(loadData)
       <!-- Filter Section -->
       <div class="app-surface p-6 shadow-xl">
         <div class="mb-6">
-          <h2 class="text-base font-bold text-foreground">Bộ lọc tìm kiếm</h2>
-          <p class="text-xs text-muted-foreground">Lọc câu hỏi theo môn học và chủ đề để quản lý dễ dàng hơn.</p>
+          <h2 class="text-base font-bold text-foreground">Bộ lọc tìm kiếm câu hỏi</h2>
+          <p class="text-xs text-muted-foreground">Kết hợp lọc môn học/chủ đề từ máy chủ với bộ lọc chi tiết ở trình duyệt.</p>
         </div>
 
-        <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          <!-- Môn học (Server) -->
           <div class="space-y-2">
-            <label class="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70" for="filter-subject">Môn học</label>
+            <label class="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70" for="filter-subject">Môn học (Server)</label>
             <select
               id="filter-subject"
               v-model="filters.subjectId"
-              class="app-select"
+              class="app-select !py-2.5 shadow-sm"
               @change="onSubjectFilterChange"
             >
               <option value="">Tất cả môn học</option>
@@ -323,12 +352,13 @@ onMounted(loadData)
             </select>
           </div>
 
+          <!-- Chủ đề (Server) -->
           <div class="space-y-2">
-            <label class="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70" for="filter-topic">Chủ đề (Topic)</label>
+            <label class="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70" for="filter-topic">Chủ đề (Server)</label>
             <select
               id="filter-topic"
               v-model="filters.topicId"
-              class="app-select"
+              class="app-select !py-2.5 shadow-sm"
               :disabled="!filteredTopicOptions.length"
               @change="onTopicFilterChange"
             >
@@ -337,6 +367,52 @@ onMounted(loadData)
                 {{ topic.name }}
               </option>
             </select>
+          </div>
+
+          <!-- Độ khó (Client) -->
+          <div class="space-y-2">
+            <label class="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70" for="filter-difficulty">Độ khó (Client)</label>
+            <select
+              id="filter-difficulty"
+              v-model="filterDifficulty"
+              class="app-select !py-2.5 shadow-sm"
+            >
+              <option value="ALL">Tất cả độ khó</option>
+              <option value="EASY">Dễ (EASY)</option>
+              <option value="MEDIUM">Trung bình (MEDIUM)</option>
+              <option value="HARD">Khó (HARD)</option>
+            </select>
+          </div>
+
+          <!-- Loại câu hỏi (Client) -->
+          <div class="space-y-2">
+            <label class="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70" for="filter-type">Loại câu hỏi (Client)</label>
+            <select
+              id="filter-type"
+              v-model="filterType"
+              class="app-select !py-2.5 shadow-sm"
+            >
+              <option value="ALL">Tất cả các loại</option>
+              <option value="MCQ">Trắc nghiệm (MCQ)</option>
+              <option value="ESSAY">Tự luận (ESSAY)</option>
+            </select>
+          </div>
+
+          <!-- Tìm nội dung (Client) -->
+          <div class="space-y-2">
+            <label class="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70" for="filter-query">Lọc nội dung (Client)</label>
+            <div class="relative group/search-client">
+              <input
+                id="filter-query"
+                v-model="filterQuery"
+                type="text"
+                placeholder="Lọc nhanh câu hỏi..."
+                class="app-input !py-2.5 !pl-9 shadow-sm"
+              >
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/60">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -348,7 +424,7 @@ onMounted(loadData)
       </div>
 
       <QuestionTable
-        :questions="displayQuestions"
+        :questions="filteredDisplayQuestions"
         :pagination="pagination"
         :is-loading="isLoading"
         @prev-page="prevPage"

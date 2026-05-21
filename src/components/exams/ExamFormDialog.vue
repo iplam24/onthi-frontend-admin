@@ -98,7 +98,8 @@ const emit = defineEmits([
   'clear-selected-questions',
   'toggle-question',
   'remove-question',
-  'update:questionSearch'
+  'update:questionSearch',
+  'submit-as-new'
 ])
 </script>
 
@@ -136,6 +137,7 @@ const emit = defineEmits([
         cancel-text="Hủy"
         @cancel="emit('close')"
         @submit="emit('submit')"
+        @submit-as-new="emit('submit-as-new')"
         @subject-change="emit('subject-change')"
         @refresh-question-pool="emit('refresh-question-pool')"
         @select-all-visible="emit('select-all-visible')"

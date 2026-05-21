@@ -49,6 +49,22 @@ export const examsAPI = {
   getBySubject(subjectId, params = {}) {
     return apiClient.get(`/exams/subjects/${subjectId}`, { params })
   },
+
+  generateRandom(data) {
+    return apiClient.post('/exams/random', data)
+  },
+
+  getExamHistory(params = {}) {
+    return apiClient.get('/exams/me/history', { params })
+  },
+
+  checkRetake(examId) {
+    return apiClient.get(`/exams/${examId}/retake-check`)
+  },
+
+  getAttemptPerformance(attemptId) {
+    return apiClient.get(`/exams/attempts/${attemptId}/performance`)
+  },
 }
 
 export const questionsAPI = {

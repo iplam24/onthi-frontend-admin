@@ -102,9 +102,12 @@
 
   /* --- Premium Surface --- */
   .app-surface {
-    @apply rounded-[2rem] border border-border/50 bg-white dark:bg-zinc-900 relative overflow-hidden;
-    box-shadow: 0 4px 20px -2px rgba(0,0,0,0.05);
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    @apply rounded-[2rem] border border-border/40 bg-white/95 dark:bg-zinc-900/95 relative backdrop-blur-md;
+    box-shadow: 
+      0 12px 30px -10px rgba(0, 0, 0, 0.03), 
+      0 4px 12px -5px rgba(0, 0, 0, 0.015),
+      inset 0 1px 1px rgba(255, 255, 255, 0.8);
+    transition: border-color 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .app-surface::before {
@@ -114,6 +117,9 @@
 
   .app-surface:hover {
     @apply shadow-xl border-primary/20;
+    box-shadow: 
+      0 20px 40px -15px rgba(124, 58, 237, 0.05),
+      0 8px 16px -6px rgba(0, 0, 0, 0.02);
   }
 
   .app-surface-interactive {
@@ -122,6 +128,9 @@
 
   .app-surface-interactive:hover {
     @apply shadow-2xl translate-y-[-4px] border-primary/30;
+    box-shadow: 
+      0 30px 60px -15px rgba(124, 58, 237, 0.1),
+      0 12px 24px -8px rgba(0, 0, 0, 0.04);
   }
 
   .app-surface:hover::before {
@@ -179,11 +188,11 @@
   }
 
   .app-input {
-    @apply w-full rounded-2xl border border-border/50 bg-white/50 px-5 py-3.5 text-sm font-medium text-foreground outline-none ring-primary/20 transition-all placeholder:text-muted-foreground/40 focus:border-primary focus:bg-white focus:ring-4 dark:bg-white/5 dark:focus:bg-white/10;
+    @apply w-full rounded-2xl border border-border/60 bg-white/40 px-5 py-3.5 text-sm font-medium text-foreground outline-none transition-all duration-300 placeholder:text-muted-foreground/30 hover:border-primary/45 focus:border-primary focus:bg-white focus:shadow-[0_0_20px_rgba(124,58,237,0.08)] dark:bg-zinc-950/20 dark:hover:border-primary/30 dark:focus:bg-zinc-950/60;
   }
 
   .app-select {
-    @apply w-full appearance-none rounded-2xl border border-border/50 bg-white/50 px-5 py-3.5 text-sm font-medium text-foreground outline-none ring-primary/20 transition-all focus:border-primary focus:bg-white focus:ring-4 dark:bg-white/5 dark:focus:bg-white/10;
+    @apply w-full appearance-none rounded-2xl border border-border/60 bg-white/40 px-5 py-3.5 text-sm font-medium text-foreground outline-none transition-all duration-300 hover:border-primary/45 focus:border-primary focus:bg-white focus:shadow-[0_0_20px_rgba(124,58,237,0.08)] dark:bg-zinc-950/20 dark:hover:border-primary/30 dark:focus:bg-zinc-950/60;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 1.25rem center;
@@ -242,8 +251,8 @@
 
 /* --- Scrollbar Customization --- */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -251,7 +260,13 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-border/80 rounded-full border-2 border-transparent bg-clip-content hover:bg-muted-foreground/50 transition-colors;
+  background: rgba(124, 58, 237, 0.18);
+  border-radius: 9999px;
+  transition: background 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(124, 58, 237, 0.38);
 }
 
 .custom-scrollbar {

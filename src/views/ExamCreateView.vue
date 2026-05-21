@@ -23,6 +23,7 @@ const formState = reactive({
   subjectId: '',
   duration: 90,
   isActive: true,
+  isPublic: true,
   startTime: '',
   endTime: '',
   type: 'MULTIPLE_CHOICE',
@@ -142,6 +143,7 @@ function resetForm() {
   formState.subjectId = ''
   formState.duration = 90
   formState.isActive = true
+  formState.isPublic = true
   formState.startTime = ''
   formState.endTime = ''
   formState.type = 'MULTIPLE_CHOICE'
@@ -293,6 +295,7 @@ async function handleSubmitExam() {
       subjectId: Number(formState.subjectId) || formState.subjectId,
       duration: Number(formState.duration) || 0,
       isActive: !!formState.isActive,
+      isPublic: !!formState.isPublic,
       startTime: formState.startTime || null,
       endTime: formState.endTime || null,
       totalScore: selectedQuestionTotalScore.value,
@@ -352,7 +355,7 @@ onMounted(async () => {
         <div class="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-primary/10 blur-[80px]"></div>
       </section>
 
-      <section class="app-surface shadow-xl p-0 overflow-hidden">
+      <section class="app-surface shadow-xl p-8 lg:p-10 overflow-hidden">
         <ExamFormWorkspace
           :subjects="subjects"
           :exam-type-options="examTypeOptions"

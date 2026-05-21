@@ -1,5 +1,5 @@
 <script setup>
-import { RefreshCw, Plus } from 'lucide-vue-next'
+import { RefreshCw, Plus, Sparkles } from 'lucide-vue-next'
 
 const props = defineProps({
   isLoading: {
@@ -28,7 +28,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['refresh', 'create'])
+const emit = defineEmits(['refresh', 'create', 'quick-random'])
 </script>
 
 <template>
@@ -52,6 +52,14 @@ const emit = defineEmits(['refresh', 'create'])
         >
           <RefreshCw class="h-4 w-4" :class="{ 'animate-spin': isLoading }" />
           Làm mới
+        </button>
+
+        <button
+          class="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-lg shadow-indigo-600/20 transition hover:-translate-y-0.5 hover:shadow-xl cursor-pointer"
+          @click="emit('quick-random')"
+        >
+          <Sparkles class="h-4 w-4" />
+          Tạo đề ngẫu nhiên
         </button>
 
         <button

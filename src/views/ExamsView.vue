@@ -8,6 +8,7 @@ import ExamFiltersPanel from '@/components/exams/ExamFiltersPanel.vue'
 import ExamTable from '@/components/exams/ExamTable.vue'
 import ExamFormDialog from '@/components/exams/ExamFormDialog.vue'
 import ExamDetailDialog from '@/components/exams/ExamDetailDialog.vue'
+import QuickRandomExamDialog from '@/components/exams/QuickRandomExamDialog.vue'
 import { normalizeCollection, normalizeSubject, normalizeTopic, normalizeQuestion, normalizeExam, normalizeExamQuestion } from '@/utils/normalizers'
 import { EXAM_LAYOUT_HINTS } from '@/constants'
 
@@ -22,6 +23,7 @@ const errorMessage = ref('')
 const questionPoolError = ref('')
 const isDialogOpen = ref(false)
 const isDetailOpen = ref(false)
+const isQuickRandomOpen = ref(false)
 const isEditing = ref(false)
 const editId = ref(null)
 const selectedExam = ref(null)
@@ -29,6 +31,35 @@ const questionSearch = ref('')
 
 const filters = reactive({
   subjectId: ''
+})
+
+// Client-side advanced filters
+const filterType = ref('ALL')
+const filterActive = ref('ALL')
+const filterQuery = ref('')
+
+const filteredExams = computed(() => {
+  return exams.value.filter(exam => {
+    // Type filter
+    if (filterType.value !== 'ALL' && String(exam.type).toUpperCase() !== filterType.value) {
+      return false
+    }
+    // Active status filter
+    if (filterActive.value !== 'ALL') {
+      const isActive = !!exam.isActive
+      if (filterActive.value === 'ACTIVE' && !isActive) return false
+      if (filterActive.value === 'INACTIVE' && isActive) return false
+    }
+    // Query search filter
+    if (filterQuery.value) {
+      const q = filterQuery.value.toLowerCase().trim()
+      const title = String(exam.title || '').toLowerCase()
+      if (!title.includes(q)) {
+        return false
+      }
+    }
+    return true
+  })
 })
 
 const pagination = reactive({
@@ -49,6 +80,7 @@ const formState = reactive({
   subjectId: '',
   duration: 90,
   isActive: true,
+  isPublic: true,
   startTime: '',
   endTime: '',
   type: 'MULTIPLE_CHOICE',
@@ -177,6 +209,7 @@ function resetForm() {
   formState.subjectId = ''
   formState.duration = 90
   formState.isActive = true
+  formState.isPublic = true
   formState.startTime = ''
   formState.endTime = ''
   formState.type = 'MULTIPLE_CHOICE'
@@ -346,6 +379,7 @@ async function openEditDialog(exam) {
     formState.subjectId = examData.subjectId
     formState.duration = examData.duration || 90
     formState.isActive = examData.isActive
+    formState.isPublic = examData.isPublic !== undefined ? examData.isPublic : true
     formState.startTime = examData.startTime || ''
     formState.endTime = examData.endTime || ''
     formState.type = examData.type
@@ -378,6 +412,7 @@ async function openEditDialog(exam) {
     formState.subjectId = exam.subjectId || ''
     formState.duration = Number(exam.duration ?? 90) || 90
     formState.isActive = !!exam.isActive
+    formState.isPublic = exam.isPublic !== undefined ? !!exam.isPublic : true
     formState.startTime = exam.startTime || ''
     formState.endTime = exam.endTime || ''
     formState.type = exam.type || 'MULTIPLE_CHOICE'
@@ -418,6 +453,15 @@ function closeDialog() {
 function closeDetailDialog() {
   isDetailOpen.value = false
   selectedExam.value = null
+}
+
+function openQuickRandomDialog() {
+  isQuickRandomOpen.value = true
+}
+
+async function handleQuickRandomSuccess() {
+  isQuickRandomOpen.value = false
+  await loadData()
 }
 
 function prevPage() {
@@ -498,6 +542,7 @@ async function handleSubmitExam() {
       subjectId: Number(formState.subjectId) || formState.subjectId,
       duration: Number(formState.duration) || 0,
       isActive: !!formState.isActive,
+      isPublic: !!formState.isPublic,
       startTime: formState.startTime || null,
       endTime: formState.endTime || null,
       totalScore: selectedQuestionTotalScore.value,
@@ -523,6 +568,46 @@ async function handleSubmitExam() {
     await loadData()
   } catch (error) {
     errorMessage.value = error.response?.data?.message || error.message || 'Không lưu được đề thi'
+  } finally {
+    isSaving.value = false
+  }
+}
+
+async function handleSaveAsNewExam() {
+  const validationMessage = validateForm()
+  if (validationMessage) {
+    errorMessage.value = validationMessage
+    return
+  }
+
+  isSaving.value = true
+  errorMessage.value = ''
+
+  try {
+    const payload = {
+      title: formState.title.trim(),
+      subjectId: Number(formState.subjectId) || formState.subjectId,
+      duration: Number(formState.duration) || 0,
+      isActive: !!formState.isActive,
+      isPublic: !!formState.isPublic,
+      startTime: formState.startTime || null,
+      endTime: formState.endTime || null,
+      totalScore: selectedQuestionTotalScore.value,
+      type: formState.type,
+      shuffleQuestions: !!formState.shuffleQuestions,
+      shuffleAnswers: !!formState.shuffleAnswers,
+      maxAttempts: Number(formState.maxAttempts) || 1,
+      uiLayoutHint: formState.uiLayoutHint,
+      questions: getRequestQuestionsPayload()
+    }
+
+    await examsAPI.create(payload)
+
+    pagination.page = 0
+    closeDialog()
+    await loadData()
+  } catch (error) {
+    errorMessage.value = error.response?.data?.message || error.message || 'Không tạo bản sao đề thi mới'
   } finally {
     isSaving.value = false
   }
@@ -556,12 +641,16 @@ onMounted(loadData)
         :total-pages="pagination.totalPages"
         @refresh="loadData"
         @create="goToCreateExam"
+        @quick-random="openQuickRandomDialog"
       />
 
       <div class="grid gap-6 lg:grid-cols-12">
         <div class="lg:col-span-12">
           <ExamFiltersPanel
             v-model:subjectId="filters.subjectId"
+            v-model:type="filterType"
+            v-model:active="filterActive"
+            v-model:query="filterQuery"
             :subjects="metadataStore.subjects"
             :get-subject-name="getSubjectName"
             @change="onSubjectFilterChange"
@@ -577,7 +666,7 @@ onMounted(loadData)
 
         <div class="lg:col-span-12">
           <ExamTable
-            :exams="exams"
+            :exams="filteredExams"
             :pagination="pagination"
             :is-loading="isLoading"
             :get-subject-name="getSubjectName"
@@ -618,6 +707,7 @@ onMounted(loadData)
         :is-question-selected="isQuestionSelected"
         @close="closeDialog"
         @submit="handleSubmitExam"
+        @submit-as-new="handleSaveAsNewExam"
         @subject-change="handleSubjectChangeInForm"
         @refresh-question-pool="loadQuestionPool(formState.subjectId)"
         @select-all-visible="selectAllVisibleQuestions"
@@ -635,6 +725,15 @@ onMounted(loadData)
         :get-active-label="getActiveLabel"
         :format-date-time="formatDateTime"
         @close="closeDetailDialog"
+      />
+
+      <QuickRandomExamDialog
+        :open="isQuickRandomOpen"
+        :subjects="metadataStore.subjects"
+        :topics="metadataStore.topics"
+        :get-subject-name="getSubjectName"
+        @close="isQuickRandomOpen = false"
+        @success="handleQuickRandomSuccess"
       />
     </div>
   </div>
