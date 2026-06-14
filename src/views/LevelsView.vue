@@ -169,7 +169,7 @@ onMounted(loadLevels)
                   <span class="text-sm font-bold text-foreground group-hover:text-primary transition-colors">{{ level.name }}</span>
                 </td>
                 <td class="px-8 py-5">
-                  <div class="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div class="flex justify-end gap-3 opacity-70 lg:opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
                     <button class="flex h-9 w-9 items-center justify-center rounded-xl border border-border/50 bg-white shadow-sm transition-all hover:-translate-y-1 hover:border-primary/50 hover:text-primary dark:bg-white/5" @click="openEditDialog(level)">
                       <Pencil class="h-4 w-4" />
                     </button>

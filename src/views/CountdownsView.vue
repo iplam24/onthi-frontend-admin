@@ -2,6 +2,7 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { Pencil, Plus, RefreshCw, Trash2, CalendarDays, TimerReset } from 'lucide-vue-next'
 import BaseDialog from '@/components/ui/BaseDialog.vue'
+import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import { countdownsAPI, levelsAPI } from '@/services/api'
 import { normalizeCollection, normalizeCountdown, normalizeLevel } from '@/utils/normalizers'
 
@@ -166,16 +167,38 @@ async function saveCountdown() {
   }
 }
 
-async function deleteCountdown(countdown) {
-  const confirmed = window.confirm(`Xóa countdown "${countdown.title}"?`)
-  if (!confirmed) return
+const isConfirmDialogOpen = ref(false)
+const confirmDialogConfig = reactive({
+  title: '',
+  message: '',
+  onConfirm: () => {}
+})
 
-  try {
-    await countdownsAPI.delete(countdown.id)
-    countdowns.value = countdowns.value.filter(item => String(item.id) !== String(countdown.id))
-  } catch (error) {
-    errorMessage.value = error.response?.data?.message || 'Không xoá được countdown'
-  }
+function triggerConfirm(config) {
+  confirmDialogConfig.title = config.title || 'Xác nhận'
+  confirmDialogConfig.message = config.message || ''
+  confirmDialogConfig.onConfirm = config.onConfirm
+  isConfirmDialogOpen.value = true
+}
+
+function handleConfirmDialogAction() {
+  confirmDialogConfig.onConfirm()
+  isConfirmDialogOpen.value = false
+}
+
+function deleteCountdown(countdown) {
+  triggerConfirm({
+    title: 'Xóa mốc sự kiện',
+    message: `Bạn có chắc chắn muốn xóa mốc đếm ngược "${countdown.title}" không?`,
+    onConfirm: async () => {
+      try {
+        await countdownsAPI.delete(countdown.id)
+        countdowns.value = countdowns.value.filter(item => String(item.id) !== String(countdown.id))
+      } catch (error) {
+        errorMessage.value = error.response?.data?.message || 'Không xoá được countdown'
+      }
+    }
+  })
 }
 
 onMounted(loadData)
@@ -307,7 +330,7 @@ onMounted(loadData)
                   <span class="text-xs font-bold text-muted-foreground uppercase tracking-widest">{{ countdown.levelLabel }}</span>
                 </td>
                 <td class="px-8 py-5">
-                  <div class="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div class="flex justify-end gap-3 opacity-70 lg:opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
                     <button class="flex h-9 w-9 items-center justify-center rounded-xl border border-border/50 bg-white shadow-sm transition-all hover:-translate-y-1 hover:border-primary/50 hover:text-primary dark:bg-white/5" @click="openEditDialog(countdown)">
                       <Pencil class="h-4 w-4" />
                     </button>
@@ -355,5 +378,14 @@ onMounted(loadData)
         </div>
       </div>
     </BaseDialog>
+
+    <!-- Confirm Dialog -->
+    <ConfirmDialog
+      :open="isConfirmDialogOpen"
+      :title="confirmDialogConfig.title"
+      :message="confirmDialogConfig.message"
+      @close="isConfirmDialogOpen = false"
+      @confirm="handleConfirmDialogAction"
+    />
   </div>
 </template>

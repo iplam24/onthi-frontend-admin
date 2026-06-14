@@ -1,16 +1,24 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { Pencil, Plus, RefreshCw, Trash2 } from 'lucide-vue-next'
 import { levelsAPI, subjectsAPI } from '@/services/api'
 import { resolveBackendUrl } from '@/utils/url'
 import { normalizeCollection, normalizeLevel, normalizeSubject } from '@/utils/normalizers'
+import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 
 const router = useRouter()
 const subjects = ref([])
 const levels = ref([])
 const isLoading = ref(false)
 const errorMessage = ref('')
+
+const isConfirmDialogOpen = ref(false)
+const confirmDialogConfig = reactive({
+  title: '',
+  message: '',
+  onConfirm: () => {}
+})
 
 const totalSubjects = computed(() => subjects.value.length)
 
@@ -20,6 +28,19 @@ const displaySubjects = computed(() =>
     imageUrl: resolveBackendUrl(subject.imageUrl)
   }))
 )
+
+function triggerConfirm(config) {
+  confirmDialogConfig.title = config.title || 'Xác nhận'
+  confirmDialogConfig.message = config.message || ''
+  confirmDialogConfig.onConfirm = config.onConfirm
+  isConfirmDialogOpen.value = true
+}
+
+function handleConfirmDialogAction() {
+  confirmDialogConfig.onConfirm()
+  isConfirmDialogOpen.value = false
+}
+
 async function loadData() {
   isLoading.value = true
   errorMessage.value = ''
@@ -47,16 +68,19 @@ function openEditPage(subject) {
   router.push(`/subjects/edit/${subject.id}`)
 }
 
-async function deleteSubject(subject) {
-  const confirmed = window.confirm(`Bạn có chắc chắn muốn xóa môn học "${subject.name}" không?`)
-  if (!confirmed) return
-
-  try {
-    await subjectsAPI.delete(subject.id)
-    subjects.value = subjects.value.filter(item => String(item.id) !== String(subject.id))
-  } catch (error) {
-    errorMessage.value = error.response?.data?.message || 'Không xoá được môn học'
-  }
+function deleteSubject(subject) {
+  triggerConfirm({
+    title: 'Xóa môn học',
+    message: `Bạn có chắc chắn muốn xóa môn học "${subject.name}" không? Chú ý: Toàn bộ đề thi và câu hỏi liên quan đến môn học này có thể bị ảnh hưởng.`,
+    onConfirm: async () => {
+      try {
+        await subjectsAPI.delete(subject.id)
+        subjects.value = subjects.value.filter(item => String(item.id) !== String(subject.id))
+      } catch (error) {
+        errorMessage.value = error.response?.data?.message || 'Không xoá được môn học'
+      }
+    }
+  })
 }
 
 function getLevelName(levelId, fallbackName) {
@@ -166,7 +190,7 @@ onMounted(loadData)
                   </span>
                 </td>
                 <td class="px-8 py-5">
-                  <div class="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div class="flex justify-end gap-3 opacity-70 lg:opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
                     <button class="flex h-9 w-9 items-center justify-center rounded-xl border border-border/50 bg-white shadow-sm transition-all hover:-translate-y-1 hover:border-primary/50 hover:text-primary dark:bg-white/5" @click="openEditPage(subject)">
                       <Pencil class="h-4 w-4" />
                     </button>
@@ -181,5 +205,14 @@ onMounted(loadData)
         </div>
       </div>
     </div>
+
+    <!-- Confirm Dialog -->
+    <ConfirmDialog
+      :open="isConfirmDialogOpen"
+      :title="confirmDialogConfig.title"
+      :message="confirmDialogConfig.message"
+      @close="isConfirmDialogOpen = false"
+      @confirm="handleConfirmDialogAction"
+    />
   </div>
 </template>
