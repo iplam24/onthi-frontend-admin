@@ -98,7 +98,7 @@
   }
 
   .app-page {
-    @apply w-full max-w-[1450px] mx-auto p-6 lg:p-10 min-h-full flex flex-col gap-8;
+    @apply w-full p-4 lg:p-6 min-h-full flex flex-col gap-8;
   }
 
   /* --- Premium Surface (Glassmorphism + Inner Bevel) --- */

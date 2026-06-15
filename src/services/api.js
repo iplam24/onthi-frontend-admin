@@ -69,8 +69,23 @@ export const examsAPI = {
 
 export const questionsAPI = {
   ...createCrudApi('/questions'),
+  getGroups(params = {}) {
+    return apiClient.get('/questions/groups', { params })
+  },
   createBatch(data) {
     return apiClient.post('/questions/batch', data)
+  },
+  createGroup(data) {
+    return apiClient.post('/questions/group', data)
+  },
+  getGroupById(id) {
+    return apiClient.get(`/questions/group/${id}`)
+  },
+  updateGroup(id, data) {
+    return apiClient.put(`/questions/group/${id}`, data)
+  },
+  deleteGroup(id) {
+    return apiClient.delete(`/questions/group/${id}`)
   },
   importExcel(file, imageFolderPath) {
     const formData = new FormData()

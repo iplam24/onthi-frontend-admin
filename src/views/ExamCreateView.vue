@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { ArrowLeft } from 'lucide-vue-next'
 import { examsAPI, questionsAPI, subjectsAPI, topicsAPI } from '@/services/api'
 import ExamFormWorkspace from '@/components/exams/ExamFormWorkspace.vue'
@@ -8,7 +8,10 @@ import { normalizeCollection, normalizeSubject, normalizeTopic, normalizeQuestio
 import { EXAM_LAYOUT_HINTS } from '@/constants'
 
 const router = useRouter()
+const route = useRoute()
+const subjectId = route.query.subjectId
 
+const defaultScorePerQuestion = ref(1.0)
 const subjects = ref([])
 const topics = ref([])
 const questionPool = ref([])
@@ -31,7 +34,9 @@ const formState = reactive({
   shuffleAnswers: false,
   maxAttempts: 1,
   uiLayoutHint: 'STANDARD',
-  questions: []
+  sections: [
+    { sectionName: 'Phần 1', items: [] }
+  ]
 })
 
 const examTypeOptions = [
@@ -85,20 +90,30 @@ function getDifficultyLabel(difficulty) {
   return labels[String(difficulty || '').toUpperCase()] || difficulty || '—'
 }
 
-function getSelectedQuestionIndex(questionId) {
-  return formState.questions.findIndex(question => String(question.questionId) === String(questionId))
+function getSelectedQuestionIndex(questionId, isGroup = false) {
+  for (let sIdx = 0; sIdx < formState.sections.length; sIdx++) {
+    const section = formState.sections[sIdx]
+    const index = section.items.findIndex(item => isGroup ? String(item.groupId) === String(questionId) : String(item.questionId) === String(questionId))
+    if (index >= 0) {
+      return { sectionIndex: sIdx, itemIndex: index }
+    }
+  }
+  return null
 }
 
-function isQuestionSelected(questionId) {
-  return getSelectedQuestionIndex(questionId) >= 0
+function isQuestionSelected(questionId, isGroup = false) {
+  return getSelectedQuestionIndex(questionId, isGroup) !== null
 }
 
-function toggleQuestionSelection(question, checked) {
-  const existingIndex = getSelectedQuestionIndex(question.id)
+function toggleQuestionSelection(question, checked, sectionIndex = 0) {
+  const isGroup = !!question.isGroup
+  const existing = getSelectedQuestionIndex(question.id, isGroup)
 
-  if (checked && existingIndex < 0) {
-    formState.questions.push({
-      questionId: question.id,
+  if (checked && !existing) {
+    if (!formState.sections[sectionIndex]) return
+    
+    formState.sections[sectionIndex].items.push({
+      ...(isGroup ? { groupId: question.id } : { questionId: question.id }),
       questionContent: question.questionContent || question.content || '',
       content: question.content,
       contentSnapshot: question.questionContent || question.content || '',
@@ -108,34 +123,32 @@ function toggleQuestionSelection(question, checked) {
       subjectName: question.subjectName ?? '',
       type: question.type ?? '',
       difficulty: question.difficulty ?? '',
-      orderIndex: formState.questions.length + 1,
-      score: 1
+      score: isGroup ? defaultScorePerQuestion.value * (question.questions?.length || 1) : defaultScorePerQuestion.value,
+      isGroup: isGroup,
+      childQuestions: isGroup ? question.questions : undefined
     })
-    return
-  }
-
-  if (!checked && existingIndex >= 0) {
-    formState.questions.splice(existingIndex, 1)
+  } else if (!checked && existing) {
+    formState.sections[existing.sectionIndex].items.splice(existing.itemIndex, 1)
   }
 }
 
-function removeQuestionFromSelection(questionId) {
-  const index = getSelectedQuestionIndex(questionId)
-  if (index >= 0) {
-    formState.questions.splice(index, 1)
+function removeQuestionFromSelection(questionId, isGroup = false) {
+  const existing = getSelectedQuestionIndex(questionId, isGroup)
+  if (existing) {
+    formState.sections[existing.sectionIndex].items.splice(existing.itemIndex, 1)
   }
 }
 
-function selectAllVisibleQuestions() {
+function selectAllVisibleQuestions(sectionIndex = 0) {
   filteredQuestionPool.value.forEach(question => {
-    if (!isQuestionSelected(question.id)) {
-      toggleQuestionSelection(question, true)
+    if (!isQuestionSelected(question.id, !!question.isGroup)) {
+      toggleQuestionSelection(question, true, sectionIndex)
     }
   })
 }
 
 function clearSelectedQuestions() {
-  formState.questions = []
+  formState.sections.forEach(s => s.items = [])
 }
 
 function resetForm() {
@@ -151,7 +164,7 @@ function resetForm() {
   formState.shuffleAnswers = false
   formState.maxAttempts = 1
   formState.uiLayoutHint = 'STANDARD'
-  formState.questions = []
+  formState.sections = [{ sectionName: 'Phần 1', items: [] }]
   questionPool.value = []
   questionSearch.value = ''
   questionPoolError.value = ''
@@ -170,11 +183,16 @@ async function loadQuestionPool(subjectId) {
   questionPoolError.value = ''
 
   try {
-    const firstResponse = await questionsAPI.getAll({
-      page: 0,
-      size: 100,
-      sort: 'id,DESC',
-      subjectId: Number(subjectId) || subjectId
+    const [firstResponse, groupsResponse] = await Promise.all([
+      questionsAPI.getAll({
+        page: 0,
+        size: 100,
+        sort: 'id,DESC',
+        subjectId: Number(subjectId) || subjectId
+      }),
+      questionsAPI.getGroups({ subjectId: Number(subjectId) || subjectId, size: 500 })
+    ]).catch(err => {
+      throw err;
     })
 
     if (loadQuestionPool.activeRequest !== requestId) return
@@ -209,7 +227,19 @@ async function loadQuestionPool(subjectId) {
       combined = [...combined, ...extraQuestions]
     }
 
-    questionPool.value = combined.filter(question => String(question.subjectId) === String(subjectId))
+    const groupsData = normalizeCollection(groupsResponse.data?.data ?? groupsResponse.data ?? {}).map(g => ({
+       id: g.id,
+       content: `[Nhóm câu hỏi] ${g.title || g.name || ''}`,
+       topicId: g.topicId,
+       topicName: g.topicName,
+       subjectId: g.subjectId,
+       difficulty: g.difficulty || '',
+       type: 'READING_COMPREHENSION',
+       isGroup: true,
+       questions: g.questions || []
+    })).map(enrichQuestion)
+
+    questionPool.value = [...groupsData, ...combined].filter(question => String(question.subjectId) === String(subjectId))
   } catch (error) {
     if (loadQuestionPool.activeRequest !== requestId) return
     questionPoolError.value = error.response?.data?.message || 'Không tải được danh sách câu hỏi cho đề thi'
@@ -247,18 +277,19 @@ const filteredQuestionPool = computed(() => {
   })
 })
 
-const selectedQuestionsSorted = computed(() =>
-  [...formState.questions].sort((a, b) => {
-    const orderDelta = Number(a.orderIndex || 0) - Number(b.orderIndex || 0)
-    if (orderDelta !== 0) return orderDelta
-    return String(a.questionId).localeCompare(String(b.questionId))
-  })
-)
-
-const selectedQuestionCount = computed(() => formState.questions.length)
+const selectedQuestionCount = computed(() => formState.sections.reduce((count, section) => {
+  return count + section.items.reduce((itemCount, item) => {
+    if (item.isGroup && item.childQuestions) {
+      return itemCount + item.childQuestions.length;
+    }
+    return itemCount + 1;
+  }, 0);
+}, 0))
 
 const selectedQuestionTotalScore = computed(() =>
-  selectedQuestionsSorted.value.reduce((sum, question) => sum + (Number(question.score) || 0), 0)
+  formState.sections.reduce((sum, section) => {
+    return sum + section.items.reduce((s, item) => s + (Number(item.score) || 0), 0)
+  }, 0)
 )
 
 function validateForm() {
@@ -266,16 +297,25 @@ function validateForm() {
   if (!formState.subjectId) return 'Vui lòng chọn môn học'
   if (!Number(formState.duration) || Number(formState.duration) <= 0) return 'Vui lòng nhập thời lượng hợp lệ'
   if (!formState.type) return 'Vui lòng chọn loại đề thi'
-  if (!selectedQuestionsSorted.value.length) return 'Vui lòng chọn ít nhất một câu hỏi cho đề thi'
+  if (selectedQuestionCount.value === 0) return 'Vui lòng chọn ít nhất một câu hỏi cho đề thi'
   return ''
 }
 
 function getRequestQuestionsPayload() {
-  return selectedQuestionsSorted.value.map(question => ({
-    questionId: question.questionId,
-    orderIndex: Number(question.orderIndex) || 1,
-    score: Number(question.score) || 1,
-    contentSnapshot: question.contentSnapshot || question.questionContent || question.content || ''
+  return formState.sections.map(section => ({
+    sectionName: section.sectionName,
+    items: section.items.map((item) => {
+      const base = {
+        score: Number(item.score) || 1,
+        contentSnapshot: item.contentSnapshot || item.questionContent || item.content || ''
+      }
+      if (item.isGroup) {
+        base.groupId = item.groupId
+      } else {
+        base.questionId = item.questionId
+      }
+      return base
+    })
   }))
 }
 
@@ -304,7 +344,7 @@ async function handleSubmitExam() {
       shuffleAnswers: !!formState.shuffleAnswers,
       maxAttempts: Number(formState.maxAttempts) || 1,
       uiLayoutHint: formState.uiLayoutHint,
-      questions: getRequestQuestionsPayload()
+      sections: getRequestQuestionsPayload()
     })
 
     router.push('/exams')
@@ -316,7 +356,7 @@ async function handleSubmitExam() {
 }
 
 function handleSubjectChangeInForm() {
-  formState.questions = []
+  formState.sections = [{ sectionName: 'Phần 1', items: [] }]
   questionSearch.value = ''
   loadQuestionPool(formState.subjectId)
 }
@@ -357,6 +397,8 @@ onMounted(async () => {
 
       <section class="app-surface shadow-xl p-8 lg:p-10 overflow-hidden">
         <ExamFormWorkspace
+          v-model:defaultScorePerQuestion="defaultScorePerQuestion"
+          :is-editing="false"
           :subjects="subjects"
           :exam-type-options="examTypeOptions"
           :form-state="formState"
@@ -367,7 +409,6 @@ onMounted(async () => {
           :question-pool-error="questionPoolError"
           :error-message="errorMessage"
           :filtered-question-pool="filteredQuestionPool"
-          :selected-questions-sorted="selectedQuestionsSorted"
           :question-search="questionSearch"
           :get-subject-name="getSubjectName"
           :get-topic-label="getTopicLabel"
@@ -382,9 +423,9 @@ onMounted(async () => {
           @submit="handleSubmitExam"
           @subject-change="handleSubjectChangeInForm"
           @refresh-question-pool="loadQuestionPool(formState.subjectId)"
-          @select-all-visible="selectAllVisibleQuestions"
+          @select-all-visible="(idx) => selectAllVisibleQuestions(idx)"
           @clear-selected-questions="clearSelectedQuestions"
-          @toggle-question="toggleQuestionSelection"
+          @toggle-question="(q, checked, idx) => toggleQuestionSelection(q, checked, idx)"
           @remove-question="removeQuestionFromSelection"
           @update:questionSearch="questionSearch = $event"
         />

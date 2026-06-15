@@ -49,6 +49,20 @@ const pendingImageFile = ref(null)
 const imagePreviewUrl = ref('')
 const localError = ref('')
 const formState = reactive({
+  isGroup: false,
+  groupTitle: '',
+  groupContent: '',
+  questions: [
+    {
+      content: '',
+      difficulty: 'EASY',
+      questionType: 'multiple_choice',
+      options: [
+        { content: '', isCorrect: false },
+        { content: '', isCorrect: false }
+      ]
+    }
+  ],
   content: '',
   contentFormat: 'PLAIN_TEXT',
   topicId: '',
@@ -174,6 +188,12 @@ function insertLatexTemplate(action, forceLatex = true) {
 
 function initForm() {
   const q = props.question || {}
+  formState.isGroup = false // Not supported for editing group yet
+  formState.groupTitle = ''
+  formState.groupContent = ''
+  formState.questions = [
+    { content: '', difficulty: 'EASY', questionType: 'multiple_choice', options: [{ content: '', isCorrect: false }, { content: '', isCorrect: false }] }
+  ]
   formState.content = q.content || ''
   formState.contentFormat = String(q.contentFormat || 'PLAIN_TEXT').toUpperCase() === 'LATEX' ? 'LATEX' : 'PLAIN_TEXT'
   formState.topicId = q.topicId || ''
@@ -197,6 +217,12 @@ function initForm() {
 }
 
 function resetDraft() {
+  formState.isGroup = false
+  formState.groupTitle = ''
+  formState.groupContent = ''
+  formState.questions = [
+    { content: '', difficulty: 'EASY', questionType: 'multiple_choice', options: [{ content: '', isCorrect: false }, { content: '', isCorrect: false }] }
+  ]
   formState.content = ''
   formState.contentFormat = 'PLAIN_TEXT'
   formState.topicId = ''
@@ -259,13 +285,51 @@ function clearImage() {
 function submitForm() {
   localError.value = ''
 
-  if (!formState.content.trim()) {
-    localError.value = 'Vui lòng nhập nội dung câu hỏi'
+  if (!formState.topicId) {
+    localError.value = 'Vui lòng chọn topic'
     return
   }
 
-  if (!formState.topicId) {
-    localError.value = 'Vui lòng chọn topic'
+  if (formState.isGroup) {
+    if (!formState.groupTitle.trim()) {
+      localError.value = 'Vui lòng nhập tiêu đề nhóm'
+      return
+    }
+    if (!formState.groupContent.trim()) {
+      localError.value = 'Vui lòng nhập nội dung đoạn văn nhóm'
+      return
+    }
+    if (!formState.questions.length) {
+      localError.value = 'Vui lòng thêm ít nhất một câu hỏi con'
+      return
+    }
+    
+    for (let i = 0; i < formState.questions.length; i++) {
+      if (!formState.questions[i].content.trim()) {
+        localError.value = `Vui lòng nhập nội dung cho câu hỏi con ${i + 1}`
+        return
+      }
+    }
+
+    emit('submit', {
+      isGroup: true,
+      form: {
+        title: formState.groupTitle.trim(),
+        content: formState.groupContent.trim(),
+        topicId: formState.topicId,
+        questions: formState.questions.map(q => ({
+          content: q.content.trim(),
+          type: q.questionType === 'essay' ? 'ESSAY' : 'MCQ',
+          difficulty: q.difficulty,
+          options: q.questionType === 'essay' ? [] : q.options.map(opt => ({ content: opt.content.trim(), isCorrect: !!opt.isCorrect })).filter(opt => opt.content)
+        }))
+      }
+    })
+    return
+  }
+
+  if (!formState.content.trim()) {
+    localError.value = 'Vui lòng nhập nội dung câu hỏi'
     return
   }
 
@@ -278,6 +342,7 @@ function submitForm() {
   const contentToSend = formState.content.trim()
 
   emit('submit', {
+    isGroup: false,
     form: {
       content: contentToSend,
       contentFormat: formState.contentFormat,
@@ -312,7 +377,19 @@ onBeforeUnmount(() => {
 <template>
   <BaseDialog :open="open" :title="isEditing ? 'Sửa câu hỏi' : 'Thêm câu hỏi'" description="Chọn topic nhanh rồi nhập câu hỏi." size="lg" @close="emit('close')">
     <div class="max-h-[70vh] space-y-5 overflow-y-auto pr-1">
-      <div class="space-y-2">
+      
+      <div v-if="!isEditing" class="flex items-center gap-4 border-b border-border pb-4">
+        <label class="flex items-center gap-2 text-sm font-medium text-foreground cursor-pointer">
+          <input type="radio" v-model="formState.isGroup" :value="false" class="h-4 w-4" />
+          Câu Hỏi Đơn
+        </label>
+        <label class="flex items-center gap-2 text-sm font-medium text-foreground cursor-pointer">
+          <input type="radio" v-model="formState.isGroup" :value="true" class="h-4 w-4" />
+          Nhóm Câu Hỏi
+        </label>
+      </div>
+
+      <div class="space-y-2" v-if="!formState.isGroup">
         <label for="question-content" class="text-sm font-medium text-foreground">Nội dung câu hỏi</label>
         <div class="mb-2 flex items-center justify-between gap-2">
           <div class="flex flex-wrap items-center gap-2">
@@ -418,7 +495,7 @@ onBeforeUnmount(() => {
         <div class="rounded-xl border border-border bg-background p-3 text-foreground" v-html="renderQuestionContent(formState.content, formState.contentFormat)" />
       </div>
 
-      <div v-if="helpVisible" class="rounded-lg border border-border bg-background p-3 text-xs text-muted-foreground">
+      <div v-if="helpVisible && !formState.isGroup" class="rounded-lg border border-border bg-background p-3 text-xs text-muted-foreground">
         <p class="font-medium text-foreground">Trợ giúp nhanh LaTeX</p>
         <ul class="mt-2 list-disc pl-5">
           <li>Sử dụng <span class="font-semibold">\\( ... \\)</span> cho inline hoặc <span class="font-semibold">$$ ... $$</span> cho block.</li>
@@ -427,7 +504,7 @@ onBeforeUnmount(() => {
         </ul>
       </div>
 
-      <div class="space-y-2">
+      <div class="space-y-2" v-if="!formState.isGroup">
         <label for="question-image" class="text-sm font-medium text-foreground">Ảnh câu hỏi</label>
         <input
           id="question-image"
@@ -473,7 +550,83 @@ onBeforeUnmount(() => {
         <p class="text-xs text-muted-foreground">Chỉ cần chọn topic một lần là xong.</p>
       </div>
 
-      <div class="space-y-2">
+      <template v-if="formState.isGroup">
+        <div class="space-y-2">
+          <label class="text-sm font-medium text-foreground">Tiêu đề nhóm</label>
+          <input
+            v-model="formState.groupTitle"
+            type="text"
+            placeholder="Ví dụ: Đọc đoạn văn sau và trả lời các câu hỏi"
+            class="w-full rounded-md border border-input bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+          />
+        </div>
+        <div class="space-y-2">
+          <label class="text-sm font-medium text-foreground">Nội dung đoạn văn</label>
+          <textarea
+            v-model="formState.groupContent"
+            rows="5"
+            placeholder="Nhập nội dung đoạn văn..."
+            class="w-full rounded-md border border-input bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+          />
+        </div>
+
+        <div class="border-t border-border pt-4 mt-4">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-md font-bold text-foreground">Các câu hỏi con</h3>
+            <button
+              type="button"
+              class="rounded-md border border-border px-3 py-1.5 text-sm text-foreground hover:bg-muted"
+              @click="formState.questions.push({ content: '', difficulty: 'EASY', questionType: 'multiple_choice', options: [{ content: '', isCorrect: false }, { content: '', isCorrect: false }] })"
+            >
+              + Thêm câu hỏi
+            </button>
+          </div>
+
+          <div v-for="(q, qIndex) in formState.questions" :key="qIndex" class="space-y-3 p-4 mb-4 rounded-xl border border-border bg-muted/10">
+            <div class="flex items-center justify-between">
+              <span class="font-medium text-sm">Câu hỏi {{ qIndex + 1 }}</span>
+              <button
+                type="button"
+                class="text-destructive text-sm disabled:opacity-50"
+                :disabled="formState.questions.length <= 1"
+                @click="formState.questions.splice(qIndex, 1)"
+              >
+                Xóa
+              </button>
+            </div>
+            
+            <textarea
+              v-model="q.content"
+              rows="2"
+              placeholder="Nội dung câu hỏi con"
+              class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
+            />
+            
+            <div class="grid grid-cols-2 gap-2">
+              <select v-model="q.difficulty" class="rounded-md border border-input px-3 py-2 text-sm">
+                <option v-for="opt in difficultyOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+              </select>
+              <select v-model="q.questionType" class="rounded-md border border-input px-3 py-2 text-sm" @change="q.questionType === 'essay' ? q.options = [] : q.options = [{ content: '', isCorrect: false }, { content: '', isCorrect: false }]">
+                <option v-for="opt in typeOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+              </select>
+            </div>
+
+            <div v-if="q.questionType === 'multiple_choice'" class="space-y-2 mt-2">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-medium">Đáp án:</span>
+                <button type="button" class="text-xs text-primary" @click="q.options.push({ content: '', isCorrect: false })">+ Thêm đáp án</button>
+              </div>
+              <div v-for="(opt, oIndex) in q.options" :key="oIndex" class="flex items-center gap-2">
+                <input type="checkbox" v-model="opt.isCorrect" class="h-3 w-3" />
+                <input v-model="opt.content" type="text" placeholder="Nội dung đáp án" class="flex-1 rounded-md border border-input px-2 py-1 text-sm" />
+                <button type="button" class="text-destructive text-xs" :disabled="q.options.length <= 2" @click="q.options.splice(oIndex, 1)">Xóa</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </template>
+
+      <div class="space-y-2" v-if="!formState.isGroup">
         <label for="question-difficulty" class="text-sm font-medium text-foreground">Độ khó</label>
         <select
           id="question-difficulty"
@@ -486,7 +639,7 @@ onBeforeUnmount(() => {
         </select>
       </div>
 
-      <div class="space-y-2">
+      <div class="space-y-2" v-if="!formState.isGroup">
         <label for="question-type" class="text-sm font-medium text-foreground">Loại câu hỏi</label>
         <select
           id="question-type"
@@ -500,7 +653,7 @@ onBeforeUnmount(() => {
         </select>
       </div>
 
-      <div v-if="isMultipleChoice" class="space-y-3">
+      <div v-if="!formState.isGroup && isMultipleChoice" class="space-y-3">
         <div class="flex items-center justify-between">
           <h3 class="text-sm font-medium text-foreground">Đáp án</h3>
           <button class="rounded-md border border-border px-3 py-1.5 text-sm text-foreground hover:bg-muted" @click="formState.options.push({ content: '', isCorrect: false })">
@@ -536,11 +689,11 @@ onBeforeUnmount(() => {
         </div>
       </div>
 
-      <p v-else class="rounded-md border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
+      <p v-else-if="!formState.isGroup" class="rounded-md border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
         Câu tự luận không cần nhập đáp án trắc nghiệm.
       </p>
 
-      <div v-if="formState.questionType === 'essay'" class="space-y-2">
+      <div v-if="!formState.isGroup && formState.questionType === 'essay'" class="space-y-2">
         <label for="question-sample-answer" class="text-sm font-medium text-foreground">Đáp án mẫu</label>
         <textarea
           id="question-sample-answer"
@@ -551,7 +704,7 @@ onBeforeUnmount(() => {
         />
       </div>
 
-      <div class="space-y-2">
+      <div class="space-y-2" v-if="!formState.isGroup">
         <label for="question-explanation" class="text-sm font-medium text-foreground">Giải thích</label>
         <textarea
           id="question-explanation"

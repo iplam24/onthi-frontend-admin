@@ -88,7 +88,9 @@ const formState = reactive({
   shuffleAnswers: false,
   maxAttempts: 1,
   uiLayoutHint: 'STANDARD',
-  questions: []
+  sections: [
+    { sectionName: 'Phần 1', items: [] }
+  ]
 })
 
 const examTypeOptions = [
@@ -158,50 +160,64 @@ function formatDateTime(value) {
   }).format(date)
 }
 
-function getSelectedQuestionIndex(questionId) {
-  return formState.questions.findIndex(question => String(question.questionId) === String(questionId))
+function getSelectedQuestionIndex(questionId, isGroup = false) {
+  for (let sIdx = 0; sIdx < formState.sections.length; sIdx++) {
+    const section = formState.sections[sIdx]
+    const index = section.items.findIndex(item => isGroup ? String(item.groupId) === String(questionId) : String(item.questionId) === String(questionId))
+    if (index >= 0) {
+      return { sectionIndex: sIdx, itemIndex: index }
+    }
+  }
+  return null
 }
 
-function isQuestionSelected(questionId) {
-  return getSelectedQuestionIndex(questionId) >= 0
+function isQuestionSelected(questionId, isGroup = false) {
+  return getSelectedQuestionIndex(questionId, isGroup) !== null
 }
 
-function toggleQuestionSelection(question, checked) {
-  const existingIndex = getSelectedQuestionIndex(question.id)
+function toggleQuestionSelection(question, checked, sectionIndex = 0) {
+  const isGroup = !!question.isGroup
+  const existing = getSelectedQuestionIndex(question.id, isGroup)
 
-  if (checked && existingIndex < 0) {
-    formState.questions.push({
-      questionId: question.id,
-      questionContent: question.content,
+  if (checked && !existing) {
+    if (!formState.sections[sectionIndex]) return
+    
+    formState.sections[sectionIndex].items.push({
+      ...(isGroup ? { groupId: question.id } : { questionId: question.id }),
+      questionContent: question.questionContent || question.content || '',
       content: question.content,
-      contentSnapshot: question.content,
+      contentSnapshot: question.questionContent || question.content || '',
       topicId: question.topicId ?? '',
       topicName: question.topicName ?? '',
       subjectId: question.subjectId ?? '',
       subjectName: question.subjectName ?? '',
       type: question.type ?? '',
       difficulty: question.difficulty ?? '',
-      orderIndex: formState.questions.length + 1,
-      score: 1
+      score: 1,
+      isGroup: isGroup
     })
-    return
+  } else if (!checked && existing) {
+    formState.sections[existing.sectionIndex].items.splice(existing.itemIndex, 1)
   }
+}
 
-  if (!checked && existingIndex >= 0) {
-    formState.questions.splice(existingIndex, 1)
+function removeQuestionFromSelection(questionId, isGroup = false) {
+  const existing = getSelectedQuestionIndex(questionId, isGroup)
+  if (existing) {
+    formState.sections[existing.sectionIndex].items.splice(existing.itemIndex, 1)
   }
 }
 
 function selectAllVisibleQuestions() {
   filteredQuestionPool.value.forEach(question => {
-    if (!isQuestionSelected(question.id)) {
+    if (!isQuestionSelected(question.id, !!question.isGroup)) {
       toggleQuestionSelection(question, true)
     }
   })
 }
 
 function clearSelectedQuestions() {
-  formState.questions = []
+  formState.sections.forEach(s => s.items = [])
 }
 
 function resetForm() {
@@ -217,7 +233,7 @@ function resetForm() {
   formState.shuffleAnswers = false
   formState.maxAttempts = 1
   formState.uiLayoutHint = 'STANDARD'
-  formState.questions = []
+  formState.sections = [{ sectionName: 'Phần 1', items: [] }]
   editId.value = null
   isEditing.value = false
   questionPool.value = []
@@ -238,11 +254,16 @@ async function loadQuestionPool(subjectId) {
   questionPoolError.value = ''
 
   try {
-    const firstResponse = await questionsAPI.getAll({
-      page: 0,
-      size: 100,
-      sort: 'id,DESC',
-      subjectId: Number(subjectId) || subjectId
+    const [firstResponse, groupsResponse] = await Promise.all([
+      questionsAPI.getAll({
+        page: 0,
+        size: 100,
+        sort: 'id,DESC',
+        subjectId: Number(subjectId) || subjectId
+      }),
+      questionsAPI.getGroups({ subjectId: Number(subjectId) || subjectId, size: 500 })
+    ]).catch(err => {
+      throw err;
     })
 
     if (loadQuestionPool.activeRequest !== requestId) return
@@ -277,7 +298,18 @@ async function loadQuestionPool(subjectId) {
       combined = [...combined, ...extraQuestions]
     }
 
-    questionPool.value = combined.filter(question => String(question.subjectId) === String(subjectId))
+    const groupsData = normalizeCollection(groupsResponse.data?.data ?? groupsResponse.data ?? {}).map(g => ({
+       id: g.id,
+       content: `[Nhóm câu hỏi] ${g.content || g.name || ''}`,
+       topicId: g.topicId,
+       topicName: g.topicName,
+       subjectId: g.subjectId,
+       difficulty: g.difficulty || '',
+       type: 'READING_COMPREHENSION',
+       isGroup: true
+    })).map(enrichQuestion)
+
+    questionPool.value = [...groupsData, ...combined].filter(question => String(question.subjectId) === String(subjectId))
   } catch (error) {
     if (loadQuestionPool.activeRequest !== requestId) return
     questionPoolError.value = error.response?.data?.message || 'Không tải được danh sách câu hỏi cho đề thi'
@@ -340,18 +372,12 @@ const filteredQuestionPool = computed(() => {
   })
 })
 
-const selectedQuestionsSorted = computed(() =>
-  [...formState.questions].sort((a, b) => {
-    const orderDelta = Number(a.orderIndex || 0) - Number(b.orderIndex || 0)
-    if (orderDelta !== 0) return orderDelta
-    return String(a.questionId).localeCompare(String(b.questionId))
-  })
-)
-
-const selectedQuestionCount = computed(() => formState.questions.length)
+const selectedQuestionCount = computed(() => formState.sections.reduce((count, section) => count + section.items.length, 0))
 
 const selectedQuestionTotalScore = computed(() =>
-  selectedQuestionsSorted.value.reduce((sum, question) => sum + (Number(question.score) || 0), 0)
+  formState.sections.reduce((sum, section) => {
+    return sum + section.items.reduce((s, item) => s + (Number(item.score) || 0), 0)
+  }, 0)
 )
 
 const activeExamCount = computed(() => exams.value.filter(exam => exam.isActive).length)
@@ -387,25 +413,34 @@ async function openEditDialog(exam) {
     formState.shuffleAnswers = examData.shuffleAnswers
     formState.maxAttempts = examData.maxAttempts || 1
     formState.uiLayoutHint = examData.uiLayoutHint || 'STANDARD'
-    formState.questions = examData.questions.map((question, index) => ({
-      ...normalizeExamQuestion(question, index)
-    }))
+    formState.sections = examData.sections && examData.sections.length > 0 ? examData.sections.map(sec => ({
+      sectionName: sec.sectionName || 'Phần 1',
+      items: sec.questions ? sec.questions.map(q => ({
+        ...normalizeExamQuestion(q, 0),
+        groupId: q.questionGroupId || q.groupId,
+        questionId: q.questionId,
+        isGroup: !!(q.questionGroupId || q.groupId),
+        score: q.score || 1
+      })) : []
+    })) : [{ sectionName: 'Phần 1', items: [] }]
 
     await loadQuestionPool(formState.subjectId)
 
     const poolMap = new Map(questionPool.value.map(question => [String(question.id), question]))
-    formState.questions = formState.questions.map((question, index) => {
-      const poolQuestion = poolMap.get(String(question.questionId))
-      return {
-        ...question,
-        ...poolQuestion,
-        questionId: question.questionId,
-        questionContent: question.questionContent || poolQuestion?.questionContent || poolQuestion?.content || question.contentSnapshot || '',
-        content: question.content || poolQuestion?.content || question.contentSnapshot || '',
-        contentSnapshot: question.contentSnapshot || question.questionContent || question.content || poolQuestion?.content || '',
-        orderIndex: question.orderIndex ?? index + 1,
-        score: Number(question.score) || 1
-      }
+    formState.sections.forEach(section => {
+      section.items = section.items.map(item => {
+        const idStr = String(item.isGroup ? item.groupId : item.questionId)
+        const poolQuestion = poolMap.get(idStr)
+        return {
+          ...item,
+          ...poolQuestion,
+          ...(item.isGroup ? { groupId: item.groupId } : { questionId: item.questionId }),
+          questionContent: item.questionContent || poolQuestion?.questionContent || poolQuestion?.content || item.contentSnapshot || '',
+          content: item.content || poolQuestion?.content || item.contentSnapshot || '',
+          contentSnapshot: item.contentSnapshot || item.questionContent || item.content || poolQuestion?.content || '',
+          score: Number(item.score) || 1
+        }
+      })
     })
   } catch {
     formState.title = exam.title || ''
@@ -420,9 +455,7 @@ async function openEditDialog(exam) {
     formState.shuffleAnswers = !!exam.shuffleAnswers
     formState.maxAttempts = Number(exam.maxAttempts ?? 1) || 1
     formState.uiLayoutHint = exam.uiLayoutHint || 'STANDARD'
-    formState.questions = Array.isArray(exam.questions)
-      ? exam.questions.map((question, index) => normalizeExamQuestion(question, index))
-      : []
+    formState.sections = [{ sectionName: 'Phần 1', items: [] }]
 
     await loadQuestionPool(formState.subjectId)
   }
@@ -494,11 +527,20 @@ async function deleteExam(exam) {
 }
 
 function getRequestQuestionsPayload() {
-  return selectedQuestionsSorted.value.map(question => ({
-    questionId: question.questionId,
-    orderIndex: Number(question.orderIndex) || 1,
-    score: Number(question.score) || 1,
-    contentSnapshot: question.contentSnapshot || question.questionContent || question.content || ''
+  return formState.sections.map(section => ({
+    sectionName: section.sectionName,
+    items: section.items.map((item) => {
+      const base = {
+        score: Number(item.score) || 1,
+        contentSnapshot: item.contentSnapshot || item.questionContent || item.content || ''
+      }
+      if (item.isGroup) {
+        base.groupId = item.groupId
+      } else {
+        base.questionId = item.questionId
+      }
+      return base
+    })
   }))
 }
 
@@ -519,7 +561,7 @@ function validateForm() {
     return 'Vui lòng chọn loại đề thi'
   }
 
-  if (!selectedQuestionsSorted.value.length) {
+  if (selectedQuestionCount.value === 0) {
     return 'Vui lòng chọn ít nhất một câu hỏi cho đề thi'
   }
 
@@ -551,7 +593,7 @@ async function handleSubmitExam() {
       shuffleAnswers: !!formState.shuffleAnswers,
       maxAttempts: Number(formState.maxAttempts) || 1,
       uiLayoutHint: formState.uiLayoutHint,
-      questions: getRequestQuestionsPayload()
+      sections: getRequestQuestionsPayload()
     }
 
     if (isEditing.value && editId.value) {
@@ -585,7 +627,7 @@ async function handleSaveAsNewExam() {
 
   try {
     const payload = {
-      title: formState.title.trim(),
+      title: formState.title.trim() + ' (Copy)',
       subjectId: Number(formState.subjectId) || formState.subjectId,
       duration: Number(formState.duration) || 0,
       isActive: !!formState.isActive,
@@ -598,7 +640,7 @@ async function handleSaveAsNewExam() {
       shuffleAnswers: !!formState.shuffleAnswers,
       maxAttempts: Number(formState.maxAttempts) || 1,
       uiLayoutHint: formState.uiLayoutHint,
-      questions: getRequestQuestionsPayload()
+      sections: getRequestQuestionsPayload()
     }
 
     await examsAPI.create(payload)
@@ -613,15 +655,8 @@ async function handleSaveAsNewExam() {
   }
 }
 
-function removeQuestionFromSelection(questionId) {
-  const index = getSelectedQuestionIndex(questionId)
-  if (index >= 0) {
-    formState.questions.splice(index, 1)
-  }
-}
-
 function handleSubjectChangeInForm() {
-  formState.questions = []
+  formState.sections = [{ sectionName: 'Phần 1', items: [] }]
   questionSearch.value = ''
   loadQuestionPool(formState.subjectId)
 }
@@ -697,7 +732,6 @@ onMounted(loadData)
         :question-pool-error="questionPoolError"
         :error-message="errorMessage"
         :filtered-question-pool="filteredQuestionPool"
-        :selected-questions-sorted="selectedQuestionsSorted"
         :question-search="questionSearch"
         :get-subject-name="getSubjectName"
         :get-topic-label="getTopicLabel"

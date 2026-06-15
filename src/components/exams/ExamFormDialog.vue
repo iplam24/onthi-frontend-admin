@@ -51,10 +51,6 @@ const props = defineProps({
     type: Array,
     default: () => []
   },
-  selectedQuestionsSorted: {
-    type: Array,
-    default: () => []
-  },
   questionSearch: {
     type: String,
     default: ''
@@ -125,7 +121,6 @@ const emit = defineEmits([
         :question-pool-error="questionPoolError"
         :error-message="errorMessage"
         :filtered-question-pool="filteredQuestionPool"
-        :selected-questions-sorted="selectedQuestionsSorted"
         :question-search="questionSearch"
         :get-subject-name="getSubjectName"
         :get-topic-label="getTopicLabel"

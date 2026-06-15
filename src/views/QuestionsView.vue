@@ -6,6 +6,8 @@ import { useMetadataStore } from '@/stores/metadataStore'
 import QuestionTable from '@/components/questions/QuestionTable.vue'
 import QuestionFormDialog from '@/components/questions/QuestionFormDialog.vue'
 import QuestionDetailDialog from '@/components/questions/QuestionDetailDialog.vue'
+import QuestionGroupFormDialog from '@/components/questions/QuestionGroupFormDialog.vue'
+import QuestionGroupDetailDialog from '@/components/questions/QuestionGroupDetailDialog.vue'
 import AiGenerateQuestionsDialog from '@/components/questions/AiGenerateQuestionsDialog.vue'
 import ImportExcelDialog from '@/components/questions/ImportExcelDialog.vue'
 import { Sparkles, FileSpreadsheet } from 'lucide-vue-next'
@@ -19,11 +21,14 @@ const isSaving = ref(false)
 const errorMessage = ref('')
 const isDialogOpen = ref(false)
 const isDetailOpen = ref(false)
+const isGroupDialogOpen = ref(false)
+const isGroupDetailOpen = ref(false)
 const isAiGenerateOpen = ref(false)
 const isImportExcelOpen = ref(false)
 const isEditing = ref(false)
 const editId = ref(null)
 const selectedQuestion = ref(null)
+const activeTab = ref('SINGLE')
 const filters = reactive({
   subjectId: '',
   topicId: ''
@@ -143,10 +148,32 @@ async function loadData() {
       ...(filters.topicId ? { topicId: Number(filters.topicId) || filters.topicId } : {})
     }
 
-    const questionsResponse = await questionsAPI.getAll(queryParams)
+    let questionsResponse;
+    if (activeTab.value === 'GROUP') {
+      questionsResponse = await questionsAPI.getGroups(queryParams)
+    } else {
+      questionsResponse = await questionsAPI.getAll(queryParams)
+    }
 
     const questionPage = questionsResponse.data?.data ?? questionsResponse.data ?? {}
-    questions.value = normalizeCollection(questionPage).map(normalizeQuestion)
+    
+    if (activeTab.value === 'GROUP') {
+      questions.value = normalizeCollection(questionPage).map(g => ({
+         id: g.id,
+         content: `<div class="mb-2 text-primary font-bold">[Nhóm câu hỏi] ${g.title || g.name || ''}</div><div>${g.content || ''}</div>`,
+         explanation: g.content,
+         topicId: g.topicId,
+         topicName: g.topicName,
+         subjectId: g.subjectId,
+         difficulty: g.difficulty || 'MEDIUM',
+         type: 'READING_COMPREHENSION',
+         isGroup: true,
+         questions: (g.questions || []).map(normalizeQuestion)
+      }))
+    } else {
+      questions.value = normalizeCollection(questionPage).map(normalizeQuestion)
+    }
+    
     pagination.totalElements = questionPage.totalElements ?? questions.value.length
     pagination.totalPages = questionPage.totalPages ?? 1
     pagination.numberOfElements = questionPage.numberOfElements ?? questions.value.length
@@ -166,7 +193,11 @@ function openCreateDialog() {
   editId.value = null
   selectedQuestion.value = null
   errorMessage.value = ''
-  isDialogOpen.value = true
+  if (activeTab.value === 'GROUP') {
+    isGroupDialogOpen.value = true
+  } else {
+    isDialogOpen.value = true
+  }
 }
 
 async function openEditDialog(question) {
@@ -174,36 +205,57 @@ async function openEditDialog(question) {
   isEditing.value = true
   editId.value = question.id
 
-  try {
-    const response = await questionsAPI.getById(question.id)
-    selectedQuestion.value = normalizeQuestion(response.data?.data ?? response.data ?? question)
-  } catch {
-    selectedQuestion.value = normalizeQuestion(question)
+  if (question.isGroup) {
+    try {
+      const response = await questionsAPI.getGroupById(question.id)
+      selectedQuestion.value = response.data?.data ?? response.data ?? question
+    } catch {
+      selectedQuestion.value = question
+    }
+    isGroupDialogOpen.value = true
+  } else {
+    try {
+      const response = await questionsAPI.getById(question.id)
+      selectedQuestion.value = normalizeQuestion(response.data?.data ?? response.data ?? question)
+    } catch {
+      selectedQuestion.value = normalizeQuestion(question)
+    }
+    isDialogOpen.value = true
   }
-
-  isDialogOpen.value = true
 }
 
 async function openDetailDialog(question) {
   errorMessage.value = ''
-  isDetailOpen.value = true
 
-  try {
-    const response = await questionsAPI.getById(question.id)
-    selectedQuestion.value = normalizeQuestion(response.data?.data ?? response.data ?? question)
-  } catch {
-    selectedQuestion.value = normalizeQuestion(question)
+  if (question.isGroup) {
+    try {
+      const response = await questionsAPI.getGroupById(question.id)
+      selectedQuestion.value = response.data?.data ?? response.data ?? question
+    } catch {
+      selectedQuestion.value = question
+    }
+    isGroupDetailOpen.value = true
+  } else {
+    try {
+      const response = await questionsAPI.getById(question.id)
+      selectedQuestion.value = normalizeQuestion(response.data?.data ?? response.data ?? question)
+    } catch {
+      selectedQuestion.value = normalizeQuestion(question)
+    }
+    isDetailOpen.value = true
   }
 }
 
 function closeDialog() {
   isDialogOpen.value = false
+  isGroupDialogOpen.value = false
   errorMessage.value = ''
   selectedQuestion.value = null
 }
 
 function closeDetailDialog() {
   isDetailOpen.value = false
+  isGroupDetailOpen.value = false
   selectedQuestion.value = null
 }
 
@@ -220,14 +272,20 @@ function nextPage() {
 }
 
 async function deleteQuestion(question) {
-  const confirmed = window.confirm(`Xóa câu hỏi: "${question.content}" ?`)
+  const confirmed = window.confirm(`Xóa ${question.isGroup ? 'nhóm câu hỏi' : 'câu hỏi'}: "${question.content}" ?`)
   if (!confirmed) return
 
   try {
-    await questionsAPI.delete(question.id)
+    // Note: If you have a specific endpoint for deleting groups, call it here. 
+    // Assuming questionsAPI.delete handles both or there's a groupsAPI.delete
+    if (question.isGroup && questionsAPI.deleteGroup) {
+        await questionsAPI.deleteGroup(question.id)
+    } else {
+        await questionsAPI.delete(question.id)
+    }
     questions.value = questions.value.filter(item => String(item.id) !== String(question.id))
   } catch (error) {
-    errorMessage.value = error.response?.data?.message || 'Không xoá được câu hỏi'
+    errorMessage.value = error.response?.data?.message || 'Không xoá được dữ liệu'
   }
 }
 
@@ -236,6 +294,13 @@ async function handleSubmitQuestion(payload) {
   errorMessage.value = ''
 
   try {
+    if (payload.isGroup) {
+      await questionsAPI.createGroup(payload.form)
+      loadData()
+      closeDialog()
+      return
+    }
+
     let uploadedUrl = payload.form.url || ''
 
     if (payload.imageFile) {
@@ -278,6 +343,24 @@ async function handleSubmitQuestion(payload) {
     closeDialog()
   } catch (error) {
     errorMessage.value = error.response?.data?.message || error.message || 'Không lưu được câu hỏi'
+  } finally {
+    isSaving.value = false
+  }
+}
+
+async function handleSubmitGroup(payload) {
+  isSaving.value = true
+  errorMessage.value = ''
+  try {
+    if (isEditing.value && editId.value) {
+      await questionsAPI.updateGroup(editId.value, payload)
+    } else {
+      await questionsAPI.createGroup(payload)
+    }
+    loadData()
+    closeDialog()
+  } catch (error) {
+    errorMessage.value = error.response?.data?.message || 'Lỗi lưu nhóm câu hỏi'
   } finally {
     isSaving.value = false
   }
@@ -423,6 +506,26 @@ onMounted(loadData)
         {{ errorMessage }}
       </div>
 
+      <!-- Tabs -->
+      <div class="flex gap-6 border-b border-border px-2">
+        <button
+          class="pb-3 text-sm font-bold transition-all relative"
+          :class="activeTab === 'SINGLE' ? 'text-primary' : 'text-muted-foreground hover:text-foreground'"
+          @click="activeTab = 'SINGLE'; resetPageAndReload()"
+        >
+          Câu hỏi đơn
+          <div v-if="activeTab === 'SINGLE'" class="absolute bottom-0 left-0 w-full h-0.5 bg-primary rounded-t-full"></div>
+        </button>
+        <button
+          class="pb-3 text-sm font-bold transition-all relative"
+          :class="activeTab === 'GROUP' ? 'text-primary' : 'text-muted-foreground hover:text-foreground'"
+          @click="activeTab = 'GROUP'; resetPageAndReload()"
+        >
+          Nhóm câu hỏi (Đoạn văn)
+          <div v-if="activeTab === 'GROUP'" class="absolute bottom-0 left-0 w-full h-0.5 bg-primary rounded-t-full"></div>
+        </button>
+      </div>
+
       <QuestionTable
         :questions="filteredDisplayQuestions"
         :pagination="pagination"
@@ -449,9 +552,28 @@ onMounted(loadData)
       @submit="handleSubmitQuestion"
     />
 
+    <QuestionGroupFormDialog
+      :is-open="isGroupDialogOpen"
+      :is-editing="isEditing"
+      :loading="isSaving"
+      :error-message="errorMessage"
+      :group="selectedQuestion"
+      :levels="metadataStore.levels"
+      :subjects="metadataStore.subjects"
+      :topics="metadataStore.topics"
+      @close="closeDialog"
+      @submit="handleSubmitGroup"
+    />
+
     <QuestionDetailDialog
       :open="isDetailOpen"
       :question="selectedQuestion"
+      @close="closeDetailDialog"
+    />
+
+    <QuestionGroupDetailDialog
+      :is-open="isGroupDetailOpen"
+      :group="selectedQuestion"
       @close="closeDetailDialog"
     />
 
