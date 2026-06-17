@@ -302,6 +302,7 @@ async function handleSubmitQuestion(payload) {
     }
 
     let uploadedUrl = payload.form.url || ''
+    let uploadedAudioUrl = payload.form.audioUrl || ''
 
     if (payload.imageFile) {
       const response = await filesAPI.upload(payload.imageFile)
@@ -314,7 +315,24 @@ async function handleSubmitQuestion(payload) {
       }
     }
 
-    const normalizedType = payload.form.questionType === 'essay' ? 'ESSAY' : 'MCQ'
+    if (payload.audioFile) {
+      const response = await filesAPI.upload(payload.audioFile)
+      const uploaded = response.data?.data ?? response.data ?? {}
+      uploadedAudioUrl = uploaded.url || uploaded.fileUrl || uploaded.path || ''
+
+      if (!uploadedAudioUrl) {
+        errorMessage.value = 'Upload audio không trả về url'
+        return
+      }
+    }
+
+    const toApiType = (qt) => {
+      if (qt === 'essay') return 'ESSAY'
+      if (qt === 'listening') return 'LISTENING'
+      if (qt === 'speaking') return 'SPEAKING'
+      return 'MCQ'
+    }
+    const normalizedType = toApiType(payload.form.questionType)
     const requestBody = {
       content: payload.form.content.trim(),
       contentFormat: payload.form.contentFormat,
@@ -322,7 +340,8 @@ async function handleSubmitQuestion(payload) {
       type: normalizedType,
       difficulty: payload.form.difficulty,
       url: uploadedUrl || null,
-      options: payload.form.questionType === 'multiple_choice'
+      audioUrl: uploadedAudioUrl || null,
+      options: payload.form.questionType === 'multiple_choice' || payload.form.questionType === 'listening'
         ? payload.form.options
             .map(option => ({ content: option.content.trim(), isCorrect: !!option.isCorrect }))
             .filter(option => option.content)

@@ -44,9 +44,12 @@ const props = defineProps({
 const emit = defineEmits(['close', 'submit'])
 
 const imageInputRef = ref(null)
+const audioInputRef = ref(null)
 const contentInputRef = ref(null)
 const pendingImageFile = ref(null)
+const pendingAudioFile = ref(null)
 const imagePreviewUrl = ref('')
+const audioPreviewUrl = ref('')
 const localError = ref('')
 const formState = reactive({
   isGroup: false,
@@ -58,8 +61,8 @@ const formState = reactive({
       difficulty: 'EASY',
       questionType: 'multiple_choice',
       options: [
-        { content: '', isCorrect: false },
-        { content: '', isCorrect: false }
+        { content: '', isCorrect: false, imageUrl: '', previewUrl: '', pendingImageFile: null },
+        { content: '', isCorrect: false, imageUrl: '', previewUrl: '', pendingImageFile: null }
       ]
     }
   ],
@@ -67,21 +70,24 @@ const formState = reactive({
   contentFormat: 'PLAIN_TEXT',
   topicId: '',
   url: '',
+  audioUrl: '',
   difficulty: 'EASY',
   questionType: 'multiple_choice',
   sampleAnswer: '',
   explanation: '',
   options: [
-    { content: '', isCorrect: false },
-    { content: '', isCorrect: false }
+    { content: '', isCorrect: false, imageUrl: '', previewUrl: '', pendingImageFile: null },
+    { content: '', isCorrect: false, imageUrl: '', previewUrl: '', pendingImageFile: null }
   ]
 })
 
-const isMultipleChoice = computed(() => formState.questionType === 'multiple_choice')
+const isMultipleChoice = computed(() => formState.questionType === 'multiple_choice' || formState.questionType === 'listening')
 
 const typeOptions = [
   { value: 'multiple_choice', label: 'Trắc nghiệm' },
-  { value: 'essay', label: 'Tự luận' }
+  { value: 'essay', label: 'Tự luận' },
+  { value: 'listening', label: 'Nghe' },
+  { value: 'speaking', label: 'Nói' }
 ]
 
 const difficultyOptions = [
@@ -192,28 +198,33 @@ function initForm() {
   formState.groupTitle = ''
   formState.groupContent = ''
   formState.questions = [
-    { content: '', difficulty: 'EASY', questionType: 'multiple_choice', options: [{ content: '', isCorrect: false }, { content: '', isCorrect: false }] }
+    { content: '', difficulty: 'EASY', questionType: 'multiple_choice', options: [{ content: '', isCorrect: false, imageUrl: '', previewUrl: '', pendingImageFile: null }, { content: '', isCorrect: false, imageUrl: '', previewUrl: '', pendingImageFile: null }] }
   ]
   formState.content = q.content || ''
   formState.contentFormat = String(q.contentFormat || 'PLAIN_TEXT').toUpperCase() === 'LATEX' ? 'LATEX' : 'PLAIN_TEXT'
   formState.topicId = q.topicId || ''
   formState.url = q.url || ''
+  formState.audioUrl = q.audioUrl || ''
   formState.difficulty = (q.difficulty || 'EASY').toUpperCase()
-  formState.questionType = (q.type || 'MCQ').toUpperCase() === 'ESSAY' ? 'essay' : 'multiple_choice'
+  const rawType = (q.type || 'MCQ').toUpperCase()
+  formState.questionType = rawType === 'ESSAY' ? 'essay' : rawType === 'LISTENING' ? 'listening' : rawType === 'SPEAKING' ? 'speaking' : 'multiple_choice'
   formState.sampleAnswer = q.sampleAnswer || ''
   formState.explanation = q.explanation || ''
   formState.options = Array.isArray(q.options) && q.options.length
-    ? q.options.map(option => ({ content: option.content || '', isCorrect: !!option.isCorrect }))
+    ? q.options.map(option => ({ content: option.content || '', isCorrect: !!option.isCorrect, imageUrl: option.imageUrl || '', previewUrl: resolveMediaUrl(option.imageUrl), pendingImageFile: null }))
     : (formState.questionType === 'essay'
         ? []
         : [
-            { content: '', isCorrect: false },
-            { content: '', isCorrect: false }
+            { content: '', isCorrect: false, imageUrl: '', previewUrl: '', pendingImageFile: null },
+            { content: '', isCorrect: false, imageUrl: '', previewUrl: '', pendingImageFile: null }
           ])
   pendingImageFile.value = null
+  pendingAudioFile.value = null
   imagePreviewUrl.value = resolveMediaUrl(formState.url)
+  audioPreviewUrl.value = resolveMediaUrl(formState.audioUrl)
   localError.value = ''
   if (imageInputRef.value) imageInputRef.value.value = ''
+  if (audioInputRef.value) audioInputRef.value.value = ''
 }
 
 function resetDraft() {
@@ -221,28 +232,32 @@ function resetDraft() {
   formState.groupTitle = ''
   formState.groupContent = ''
   formState.questions = [
-    { content: '', difficulty: 'EASY', questionType: 'multiple_choice', options: [{ content: '', isCorrect: false }, { content: '', isCorrect: false }] }
+    { content: '', difficulty: 'EASY', questionType: 'multiple_choice', options: [{ content: '', isCorrect: false, imageUrl: '', previewUrl: '', pendingImageFile: null }, { content: '', isCorrect: false, imageUrl: '', previewUrl: '', pendingImageFile: null }] }
   ]
   formState.content = ''
   formState.contentFormat = 'PLAIN_TEXT'
   formState.topicId = ''
   formState.url = ''
+  formState.audioUrl = ''
   formState.difficulty = 'EASY'
   formState.questionType = 'multiple_choice'
   formState.sampleAnswer = ''
   formState.explanation = ''
   formState.options = [
-    { content: '', isCorrect: false },
-    { content: '', isCorrect: false }
+    { content: '', isCorrect: false, imageUrl: '', previewUrl: '', pendingImageFile: null },
+    { content: '', isCorrect: false, imageUrl: '', previewUrl: '', pendingImageFile: null }
   ]
   pendingImageFile.value = null
+  pendingAudioFile.value = null
   imagePreviewUrl.value = ''
+  audioPreviewUrl.value = ''
   localError.value = ''
   if (imageInputRef.value) imageInputRef.value.value = ''
+  if (audioInputRef.value) audioInputRef.value.value = ''
 }
 
 function handleTypeChange() {
-  if (formState.questionType === 'essay') {
+  if (formState.questionType === 'essay' || formState.questionType === 'speaking') {
     formState.options = []
   } else if (!formState.options.length) {
     formState.options = [
@@ -282,6 +297,64 @@ function clearImage() {
   if (imageInputRef.value) imageInputRef.value.value = ''
 }
 
+function handleAudioChange(event) {
+  const file = event.target.files?.[0]
+  if (!file) return
+
+  pendingAudioFile.value = file
+  formState.audioUrl = ''
+
+  if (audioPreviewUrl.value.startsWith('blob:')) {
+    URL.revokeObjectURL(audioPreviewUrl.value)
+  }
+
+  audioPreviewUrl.value = URL.createObjectURL(file)
+}
+
+function clearAudio() {
+  pendingAudioFile.value = null
+  formState.audioUrl = ''
+
+  if (audioPreviewUrl.value.startsWith('blob:')) {
+    URL.revokeObjectURL(audioPreviewUrl.value)
+  }
+
+  audioPreviewUrl.value = ''
+  if (audioInputRef.value) audioInputRef.value.value = ''
+}
+
+function handleOptionImageChange(option, event) {
+  const file = event.target.files?.[0]
+  if (!file) return
+
+  option.pendingImageFile = file
+  option.imageUrl = ''
+
+  if (option.previewUrl?.startsWith('blob:')) {
+    URL.revokeObjectURL(option.previewUrl)
+  }
+
+  option.previewUrl = URL.createObjectURL(file)
+}
+
+function clearOptionImage(option) {
+  option.pendingImageFile = null
+  option.imageUrl = ''
+
+  if (option.previewUrl?.startsWith('blob:')) {
+    URL.revokeObjectURL(option.previewUrl)
+  }
+
+  option.previewUrl = ''
+}
+
+function toApiQuestionType(type) {
+  if (type === 'essay') return 'ESSAY'
+  if (type === 'listening') return 'LISTENING'
+  if (type === 'speaking') return 'SPEAKING'
+  return 'MCQ'
+}
+
 function submitForm() {
   localError.value = ''
 
@@ -319,9 +392,9 @@ function submitForm() {
         topicId: formState.topicId,
         questions: formState.questions.map(q => ({
           content: q.content.trim(),
-          type: q.questionType === 'essay' ? 'ESSAY' : 'MCQ',
+          type: toApiQuestionType(q.questionType),
           difficulty: q.difficulty,
-          options: q.questionType === 'essay' ? [] : q.options.map(opt => ({ content: opt.content.trim(), isCorrect: !!opt.isCorrect })).filter(opt => opt.content)
+          options: q.questionType === 'essay' || q.questionType === 'speaking' ? [] : q.options.map(opt => ({ content: opt.content.trim(), isCorrect: !!opt.isCorrect })).filter(opt => opt.content)
         }))
       }
     })
@@ -348,13 +421,15 @@ function submitForm() {
       contentFormat: formState.contentFormat,
       topicId: formState.topicId,
       url: formState.url,
+      audioUrl: formState.audioUrl,
       difficulty: formState.difficulty,
       questionType: formState.questionType,
       sampleAnswer: formState.sampleAnswer,
       explanation: formState.explanation,
       options: formState.options.map(option => ({ ...option }))
     },
-    imageFile: pendingImageFile.value
+    imageFile: pendingImageFile.value,
+    audioFile: pendingAudioFile.value
   })
 }
 
@@ -517,6 +592,36 @@ onBeforeUnmount(() => {
         <p class="text-xs text-muted-foreground">Chọn ảnh để xem trước. Ảnh sẽ upload khi bấm Lưu/Cập nhật.</p>
       </div>
 
+      <div class="space-y-2" v-if="!formState.isGroup && (formState.questionType === 'listening' || formState.questionType === 'speaking')">
+        <label for="question-audio" class="text-sm font-medium text-foreground">File Audio</label>
+        <input
+          id="question-audio"
+          ref="audioInputRef"
+          type="file"
+          accept="audio/*"
+          class="w-full rounded-md border border-input bg-background px-3 py-2 text-foreground file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-2 file:text-sm file:font-medium file:text-primary-foreground hover:file:bg-primary/90"
+          @change="handleAudioChange"
+        />
+        <p class="text-xs text-muted-foreground">Hỗ trợ MP3, WAV, OGG. Audio sẽ upload khi bấm Lưu/Cập nhật.</p>
+      </div>
+
+      <div v-if="audioPreviewUrl" class="space-y-2">
+        <p class="text-sm font-medium text-foreground">Xem trước audio</p>
+        <div class="flex items-center gap-3 rounded-xl border border-border bg-background p-3">
+          <audio :src="audioPreviewUrl" controls class="w-full max-w-[300px]" />
+          <div class="flex-1">
+            <p class="break-all text-sm text-muted-foreground">{{ pendingAudioFile?.name ? `Đã chọn: ${pendingAudioFile.name}` : (formState.audioUrl || 'Audio sẽ được upload khi bấm Lưu') }}</p>
+            <button
+              class="mt-2 rounded-md border border-border px-3 py-1.5 text-sm text-foreground hover:bg-muted"
+              type="button"
+              @click="clearAudio"
+            >
+              Xóa audio
+            </button>
+          </div>
+        </div>
+      </div>
+
       <div v-if="imagePreviewUrl" class="space-y-2">
         <p class="text-sm font-medium text-foreground">Xem trước ảnh</p>
         <div class="flex items-center gap-3 rounded-xl border border-border bg-background p-3">
@@ -576,7 +681,7 @@ onBeforeUnmount(() => {
             <button
               type="button"
               class="rounded-md border border-border px-3 py-1.5 text-sm text-foreground hover:bg-muted"
-              @click="formState.questions.push({ content: '', difficulty: 'EASY', questionType: 'multiple_choice', options: [{ content: '', isCorrect: false }, { content: '', isCorrect: false }] })"
+              @click="formState.questions.push({ content: '', difficulty: 'EASY', questionType: 'multiple_choice', options: [{ content: '', isCorrect: false, imageUrl: '', previewUrl: '', pendingImageFile: null }, { content: '', isCorrect: false, imageUrl: '', previewUrl: '', pendingImageFile: null }] })"
             >
               + Thêm câu hỏi
             </button>
@@ -614,7 +719,7 @@ onBeforeUnmount(() => {
             <div v-if="q.questionType === 'multiple_choice'" class="space-y-2 mt-2">
               <div class="flex items-center justify-between">
                 <span class="text-xs font-medium">Đáp án:</span>
-                <button type="button" class="text-xs text-primary" @click="q.options.push({ content: '', isCorrect: false })">+ Thêm đáp án</button>
+                <button type="button" class="text-xs text-primary" @click="q.options.push({ content: '', isCorrect: false, imageUrl: '', previewUrl: '', pendingImageFile: null })">+ Thêm đáp án</button>
               </div>
               <div v-for="(opt, oIndex) in q.options" :key="oIndex" class="flex items-center gap-2">
                 <input type="checkbox" v-model="opt.isCorrect" class="h-3 w-3" />
@@ -656,7 +761,7 @@ onBeforeUnmount(() => {
       <div v-if="!formState.isGroup && isMultipleChoice" class="space-y-3">
         <div class="flex items-center justify-between">
           <h3 class="text-sm font-medium text-foreground">Đáp án</h3>
-          <button class="rounded-md border border-border px-3 py-1.5 text-sm text-foreground hover:bg-muted" @click="formState.options.push({ content: '', isCorrect: false })">
+          <button class="rounded-md border border-border px-3 py-1.5 text-sm text-foreground hover:bg-muted" @click="formState.options.push({ content: '', isCorrect: false, imageUrl: '', previewUrl: '', pendingImageFile: null })">
             + Thêm đáp án
           </button>
         </div>
@@ -693,7 +798,7 @@ onBeforeUnmount(() => {
         Câu tự luận không cần nhập đáp án trắc nghiệm.
       </p>
 
-      <div v-if="!formState.isGroup && formState.questionType === 'essay'" class="space-y-2">
+      <div v-if="!formState.isGroup && (formState.questionType === 'essay' || formState.questionType === 'listening')" class="space-y-2">
         <label for="question-sample-answer" class="text-sm font-medium text-foreground">Đáp án mẫu</label>
         <textarea
           id="question-sample-answer"
