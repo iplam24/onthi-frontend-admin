@@ -11,7 +11,8 @@ import {
   ClipboardList, 
   TimerReset, 
   Users,
-  Cpu
+  Cpu,
+  Settings
 } from 'lucide-vue-next'
 
 const route = useRoute()
@@ -61,6 +62,12 @@ const navItems = [
     description: 'Đổi nguồn & API Key AI',
     to: '/ai-config',
     icon: Cpu
+  },
+  {
+    label: 'Cấu hình Hệ thống',
+    description: 'Cấu hình PayOS, VAPID, Security',
+    to: '/system-settings',
+    icon: Settings
   }
 ]
 

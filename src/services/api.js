@@ -147,6 +147,15 @@ export const aiConfigAPI = {
   }
 }
 
+export const systemSettingsAPI = {
+  getSettings() {
+    return apiClient.get('/admin/system-settings')
+  },
+  updateSettings(data) {
+    return apiClient.post('/admin/system-settings', data)
+  }
+}
+
 export const adminUsersAPI = {
   getAll(params = {}) {
     return apiClient.get('/admin/users', { params })
