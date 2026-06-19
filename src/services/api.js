@@ -138,6 +138,15 @@ export const aiAPI = {
   }
 }
 
+export const aiConfigAPI = {
+  getConfig() {
+    return apiClient.get('/admin/ai-config')
+  },
+  updateConfig(data) {
+    return apiClient.post('/admin/ai-config', data)
+  }
+}
+
 export const adminUsersAPI = {
   getAll(params = {}) {
     return apiClient.get('/admin/users', { params })

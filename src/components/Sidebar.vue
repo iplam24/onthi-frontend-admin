@@ -10,7 +10,8 @@ import {
   HelpCircle, 
   ClipboardList, 
   TimerReset, 
-  Users 
+  Users,
+  Cpu
 } from 'lucide-vue-next'
 
 const route = useRoute()
@@ -54,6 +55,12 @@ const navItems = [
     description: 'Quản lý tài khoản & số dư',
     to: '/users',
     icon: Users
+  },
+  {
+    label: 'Cấu hình AI',
+    description: 'Đổi nguồn & API Key AI',
+    to: '/ai-config',
+    icon: Cpu
   }
 ]
 

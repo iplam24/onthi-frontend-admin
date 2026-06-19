@@ -776,6 +776,29 @@ onBeforeUnmount(() => {
                 placeholder="Nhập nội dung đáp án"
                 class="w-full rounded-md border border-input bg-background px-3 py-2 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
               />
+              
+              <!-- Option Image Upload Section -->
+              <div class="mt-2 space-y-2">
+                <label class="text-xs font-medium text-foreground block">Ảnh đáp án (tùy chọn)</label>
+                <div class="flex items-center gap-3">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    class="rounded-md border border-input bg-background px-2 py-1 text-xs text-foreground file:mr-2 file:rounded file:border-0 file:bg-primary/10 file:px-2 file:py-1 file:text-xs file:font-medium file:text-primary hover:file:bg-primary/20"
+                    @change="handleOptionImageChange(option, $event)"
+                  />
+                  <div v-if="option.previewUrl" class="flex items-center gap-2 rounded-lg border border-border bg-muted/20 p-1">
+                    <img :src="option.previewUrl" alt="Option preview" class="h-10 w-10 rounded object-cover" />
+                    <button
+                      type="button"
+                      class="text-[10px] font-bold text-destructive hover:underline"
+                      @click="clearOptionImage(option)"
+                    >
+                      Xóa ảnh
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <label class="mt-7 inline-flex items-center gap-2 text-sm text-foreground">

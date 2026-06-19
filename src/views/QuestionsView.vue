@@ -326,6 +326,24 @@ async function handleSubmitQuestion(payload) {
       }
     }
 
+    // Upload option images if they are pending
+    const options = []
+    if (payload.form.options && payload.form.options.length) {
+      for (const option of payload.form.options) {
+        let imageUrl = option.imageUrl || ''
+        if (option.pendingImageFile) {
+          const response = await filesAPI.upload(option.pendingImageFile)
+          const uploaded = response.data?.data ?? response.data ?? {}
+          imageUrl = uploaded.url || uploaded.fileUrl || uploaded.path || ''
+        }
+        options.push({
+          content: option.content ? option.content.trim() : '',
+          isCorrect: !!option.isCorrect,
+          imageUrl: imageUrl || null
+        })
+      }
+    }
+
     const toApiType = (qt) => {
       if (qt === 'essay') return 'ESSAY'
       if (qt === 'listening') return 'LISTENING'
@@ -342,9 +360,7 @@ async function handleSubmitQuestion(payload) {
       url: uploadedUrl || null,
       audioUrl: uploadedAudioUrl || null,
       options: payload.form.questionType === 'multiple_choice' || payload.form.questionType === 'listening'
-        ? payload.form.options
-            .map(option => ({ content: option.content.trim(), isCorrect: !!option.isCorrect }))
-            .filter(option => option.content)
+        ? options.filter(option => option.content)
         : [],
       sampleAnswer: payload.form.sampleAnswer?.trim() || '',
       explanation: payload.form.explanation?.trim() || ''

@@ -79,6 +79,12 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
+      path: '/ai-config',
+      name: 'AiConfig',
+      component: () => import('../views/AiConfigView.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
       path: '/:pathMatch(.*)*',
       name: 'NotFound',
       component: () => import('../views/NotFoundView.vue'),
