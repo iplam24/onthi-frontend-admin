@@ -5,6 +5,7 @@ import { API_CONFIG } from '@/constants'
 import { resolveBackendUrl } from '@/utils/url'
 import { RefreshCw as RefreshIcon, Trash2 as TrashIcon } from 'lucide-vue-next'
 import { renderQuestionContent } from '@/utils/questionContent'
+import { englishAPI } from '@/services/api'
 
 const props = defineProps({
   open: {
@@ -323,6 +324,46 @@ function clearAudio() {
   if (audioInputRef.value) audioInputRef.value.value = ''
 }
 
+const isTtsOpen = ref(false)
+const ttsText = ref('')
+const ttsVoice = ref('alloy')
+const isGeneratingTts = ref(false)
+const ttsSuccess = ref(false)
+
+function copyContentToTts() {
+  ttsText.value = formState.content || ''
+}
+
+async function handleGenerateTts() {
+  if (!ttsText.value || !ttsText.value.trim()) {
+    localError.value = 'Vui lòng nhập văn bản để tạo giọng nói AI!'
+    return
+  }
+
+  isGeneratingTts.value = true
+  localError.value = ''
+  ttsSuccess.value = false
+  try {
+    const res = await englishAPI.generateTts(ttsText.value.trim(), ttsVoice.value)
+    const data = res.data?.data || res.data
+    if (data && data.url) {
+      pendingAudioFile.value = null
+      formState.audioUrl = data.url
+      audioPreviewUrl.value = resolveMediaUrl(data.url)
+      ttsSuccess.value = true
+      setTimeout(() => {
+        ttsSuccess.value = false
+      }, 3000)
+    } else {
+      localError.value = 'Tạo giọng nói AI thất bại: Không nhận được URL tệp tin.'
+    }
+  } catch (err) {
+    localError.value = err.response?.data?.message || 'Lỗi khi gọi API tạo giọng nói. Hãy kiểm tra cấu hình Custom OpenAI của bạn.'
+  } finally {
+    isGeneratingTts.value = false
+  }
+}
+
 function handleOptionImageChange(option, event) {
   const file = event.target.files?.[0]
   if (!file) return
@@ -511,7 +552,7 @@ onBeforeUnmount(() => {
           ref="contentInputRef"
           v-model="formState.content"
           rows="6"
-          placeholder="Nhập nội dung câu hỏi"
+          :placeholder="formState.questionType === 'speaking' ? 'Nh?p transcript m?u, t? kh?a b?t bu?c ho?c rubric ch?m ?i?m cho c?u tr? l?i n?i' : 'Nh?p ??p ?n m?u n?u c?'"
           class="w-full rounded-md border border-input bg-background px-3 py-2 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
         />
       </div>
@@ -603,6 +644,66 @@ onBeforeUnmount(() => {
           @change="handleAudioChange"
         />
         <p class="text-xs text-muted-foreground">Hỗ trợ MP3, WAV, OGG. Audio sẽ upload khi bấm Lưu/Cập nhật.</p>
+
+        <!-- TTS AI Builder -->
+        <div class="mt-3 rounded-lg border border-border bg-muted/30 p-4 space-y-3">
+          <button 
+            type="button" 
+            @click="isTtsOpen = !isTtsOpen"
+            class="flex items-center gap-1.5 text-xs font-bold text-primary hover:underline"
+          >
+            🎙️ {{ isTtsOpen ? 'Đóng bảng tạo giọng nói AI' : 'Hoặc tự động tạo giọng nói AI (Text-to-Speech)' }}
+          </button>
+          
+          <div v-if="isTtsOpen" class="space-y-3 pt-2 border-t border-border/50">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-medium text-muted-foreground">Nhập nội dung tiếng Anh cần đọc</span>
+              <button 
+                type="button" 
+                @click="copyContentToTts"
+                class="text-[10px] font-bold text-foreground hover:text-primary border border-border rounded px-2 py-0.5 bg-background"
+              >
+                Lấy từ nội dung câu hỏi
+              </button>
+            </div>
+            
+            <textarea
+              v-model="ttsText"
+              rows="3"
+              placeholder="Ví dụ: Hello, welcome to the English listening test..."
+              class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+            />
+            
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <label class="text-xs font-medium text-muted-foreground">Giọng đọc:</label>
+                <select 
+                  v-model="ttsVoice"
+                  class="rounded border border-input bg-background px-2 py-1 text-xs text-foreground focus:outline-none"
+                >
+                  <option value="alloy">Alloy (Mặc định)</option>
+                  <option value="nova">Nova (Nữ - Mỹ)</option>
+                  <option value="onyx">Onyx (Nam - Mỹ)</option>
+                  <option value="shimmer">Shimmer (Nữ - Trong trẻo)</option>
+                  <option value="echo">Echo (Nam - Ấm áp)</option>
+                  <option value="fable">Fable (Sáng tạo)</option>
+                </select>
+              </div>
+              
+              <button
+                type="button"
+                @click="handleGenerateTts"
+                :disabled="isGeneratingTts || !ttsText.trim()"
+                class="inline-flex items-center gap-1.5 rounded-md bg-primary hover:bg-primary/95 text-primary-foreground px-3 py-1.5 text-xs font-bold active:scale-95 transition-all disabled:opacity-50"
+              >
+                <i v-if="isGeneratingTts" class="fa-solid fa-spinner animate-spin mr-1"></i>
+                <span>{{ isGeneratingTts ? 'Đang tạo...' : 'Tạo giọng nói AI' }}</span>
+              </button>
+            </div>
+            
+            <p v-if="ttsSuccess" class="text-[10px] font-bold text-emerald-600">✓ Đã tạo thành công giọng nói AI và tải vào bài nghe!</p>
+          </div>
+        </div>
       </div>
 
       <div v-if="audioPreviewUrl" class="space-y-2">
@@ -817,12 +918,12 @@ onBeforeUnmount(() => {
         </div>
       </div>
 
-      <p v-else-if="!formState.isGroup" class="rounded-md border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
+      <p v-else-if="!formState.isGroup" class="rounded-2xl border border-indigo-100 bg-indigo-50/60 p-4 text-sm font-medium text-indigo-700">
         Câu tự luận không cần nhập đáp án trắc nghiệm.
       </p>
 
-      <div v-if="!formState.isGroup && (formState.questionType === 'essay' || formState.questionType === 'listening')" class="space-y-2">
-        <label for="question-sample-answer" class="text-sm font-medium text-foreground">Đáp án mẫu</label>
+      <div v-if="!formState.isGroup && (formState.questionType === 'essay' || formState.questionType === 'listening' || formState.questionType === 'speaking')" class="space-y-2 rounded-2xl border border-slate-200 bg-white/70 p-4">
+        <label for="question-sample-answer" class="text-sm font-bold text-foreground">{{ formState.questionType === 'speaking' ? 'Speaking transcript / grading rubric' : 'Sample answer' }}</label>
         <textarea
           id="question-sample-answer"
           v-model="formState.sampleAnswer"

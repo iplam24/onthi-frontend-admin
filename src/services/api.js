@@ -156,6 +156,12 @@ export const systemSettingsAPI = {
   }
 }
 
+export const englishAPI = {
+  generateTts(text, voice) {
+    return apiClient.post('/english/tts/generate', { text, voice })
+  }
+}
+
 export const adminUsersAPI = {
   getAll(params = {}) {
     return apiClient.get('/admin/users', { params })
