@@ -922,6 +922,27 @@ onBeforeUnmount(() => {
         Câu tự luận không cần nhập đáp án trắc nghiệm.
       </p>
 
+      <div v-if="!formState.isGroup && formState.questionType === 'speaking'" class="relative overflow-hidden rounded-2xl border border-rose-100 bg-gradient-to-br from-rose-50 via-white to-indigo-50 p-5 shadow-lg shadow-rose-500/5">
+        <div class="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full bg-rose-300/20 blur-2xl"></div>
+        <div class="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div class="flex items-center gap-4">
+            <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-950 text-white shadow-xl shadow-slate-900/20">
+              <i class="fa-solid fa-microphone-lines text-lg"></i>
+            </div>
+            <div>
+              <p class="m-0 text-[10px] font-black uppercase tracking-[0.22em] text-rose-600">Speaking Question</p>
+              <h3 class="m-0 mt-1 text-base font-black text-slate-950">Hoc sinh se ghi am va nghe lai truoc khi nop</h3>
+              <p class="m-0 mt-1 text-xs font-semibold text-slate-500">Audio answer is required. Transcript/rubric below helps grading.</p>
+            </div>
+          </div>
+          <div class="grid grid-cols-3 gap-2 text-center text-[10px] font-black uppercase tracking-wider text-slate-500">
+            <span class="rounded-xl border border-white bg-white/80 px-3 py-2 shadow-sm">Record</span>
+            <span class="rounded-xl border border-white bg-white/80 px-3 py-2 shadow-sm">Replay</span>
+            <span class="rounded-xl border border-white bg-white/80 px-3 py-2 shadow-sm">Submit</span>
+          </div>
+        </div>
+      </div>
+
       <div v-if="!formState.isGroup && (formState.questionType === 'essay' || formState.questionType === 'listening' || formState.questionType === 'speaking')" class="space-y-2 rounded-2xl border border-slate-200 bg-white/70 p-4">
         <label for="question-sample-answer" class="text-sm font-bold text-foreground">{{ formState.questionType === 'speaking' ? 'Speaking transcript / grading rubric' : 'Sample answer' }}</label>
         <textarea
